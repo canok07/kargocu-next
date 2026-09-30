@@ -18,6 +18,7 @@ sealed interface GameCommand {
     data class FireDriver(override val commandId: CommandId, val driverId: DriverId) : GameCommand
     data class AssignDriver(override val commandId: CommandId, val driverId: DriverId, val vehicleId: VehicleId) : GameCommand
     data class UnassignDriver(override val commandId: CommandId, val driverId: DriverId) : GameCommand
+    data class RefreshProgression(override val commandId: CommandId) : GameCommand
 }
 
 sealed interface Rejection {
@@ -43,6 +44,7 @@ sealed interface Rejection {
     data class VehicleAlreadyAssigned(val vehicleId: VehicleId) : Rejection
     data class AssignedDriverRequired(val vehicleId: VehicleId) : Rejection
     data class DriverUnavailable(val driverId: DriverId) : Rejection
+    data class StateInvariantViolation(val issues: List<StateIssue>) : Rejection
     data class ArithmeticFailure(val operation: String) : Rejection
 }
 
@@ -82,7 +84,7 @@ class GameEngine(
     fun reduce(state: GameState, command: GameCommand): GameResult {
         if (command.commandId in state.processedCommandIds) return GameResult.Rejected(state, Rejection.DuplicateCommand(command.commandId))
         return try {
-            when (command) {
+            val result = when (command) {
                 is GameCommand.GenerateDailyOffers -> generateOffers(state, command.commandId)
                 is GameCommand.AcceptJob -> acceptJob(state, command)
                 is GameCommand.AdvanceTime -> if (command.gameMillis < 0) GameResult.Rejected(state, Rejection.InvalidAdvance(command.gameMillis)) else advance(state, command.commandId, state.gameTime.plusMillis(command.gameMillis))
@@ -103,7 +105,12 @@ class GameEngine(
                 is GameCommand.FireDriver -> fireDriver(state, command)
                 is GameCommand.AssignDriver -> assignDriver(state, command)
                 is GameCommand.UnassignDriver -> unassignDriver(state, command)
+                is GameCommand.RefreshProgression -> GameResult.Applied(markProcessed(unlockRegions(state), command.commandId), emptyList())
             }
+            if (result is GameResult.Applied) {
+                val issues = GameStateValidator.validate(result.state, catalog)
+                if (issues.isEmpty()) result else GameResult.Rejected(state, Rejection.StateInvariantViolation(issues))
+            } else result
         } catch (_: ArithmeticException) {
             GameResult.Rejected(state, Rejection.ArithmeticFailure(command::class.simpleName ?: "command"))
         }
@@ -305,6 +312,12 @@ class GameEngine(
         val snapshottedRiskChance = Math.addExact(risk.chancePerMillion, driverErrorChance).coerceAtMost(250_000)
         val job = ActiveJob(jobId, offer.id, vehicle.id, if (command.manualDriving) null else assignedDriver?.id, command.manualDriving, route.id, risk.id, snapshottedRiskChance, state.gameTime, state.gameTime.plusMillis(duration), state.gameTime.plusMillis(duration), invoice, reservation, reservedOperatingCosts, distanceMeters = route.distanceMeters, riskRollPerMillion = riskRoll)
         val entry = ledger(state, LedgerType.RESERVATION, Money(-reservation.cents), jobId = jobId, vehicleId = vehicle.id)
+        val activeAfterAcceptance = state.activeJobs.size + 1
+        val tutorial = when {
+            activeAfterAcceptance >= 2 && state.tutorial.step == TutorialStep.START_PARALLEL_JOBS -> state.tutorial.copy(step = TutorialStep.COMPLETE)
+            state.tutorial.step == TutorialStep.ACCEPT_FIRST_JOB -> state.tutorial.copy(step = TutorialStep.COMPLETE_FIRST_JOB)
+            else -> state.tutorial
+        }
         val next = state.copy(
             money = state.money - reservation,
             nextEntitySequence = Math.addExact(state.nextEntitySequence, 1),
@@ -314,6 +327,7 @@ class GameEngine(
             offers = state.offers.filterNot { it.id == offer.id },
             activeJobs = state.activeJobs + job,
             ledger = bounded(state.ledger + entry),
+            tutorial = tutorial,
         )
         return GameResult.Applied(markProcessed(next, command.commandId), listOf(GameEvent.LedgerBooked(entry), GameEvent.JobAccepted(jobId, reservation)))
     }
