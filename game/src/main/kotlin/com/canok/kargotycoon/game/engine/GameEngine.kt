@@ -10,6 +10,10 @@ sealed interface GameCommand {
     data class AdvanceTime(override val commandId: CommandId, val gameMillis: Long) : GameCommand
     data class Resume(override val commandId: CommandId, val realtimeNowMillis: Long) : GameCommand
     data class AdvanceDay(override val commandId: CommandId) : GameCommand
+    data class PurchaseVehicle(override val commandId: CommandId, val specId: VehicleSpecId) : GameCommand
+    data class SellVehicle(override val commandId: CommandId, val vehicleId: VehicleId) : GameCommand
+    data class RepairVehicle(override val commandId: CommandId, val vehicleId: VehicleId) : GameCommand
+    data class MaintainVehicle(override val commandId: CommandId, val vehicleId: VehicleId) : GameCommand
 }
 
 sealed interface Rejection {
@@ -24,6 +28,11 @@ sealed interface Rejection {
     data class InsufficientFunds(val required: Money, val available: Money) : Rejection
     data object ManualDriverBusy : Rejection
     data class InvalidAdvance(val gameMillis: Long) : Rejection
+    data class CompanyLevelRequired(val required: Int, val actual: Int) : Rejection
+    data class RentalVehicleProtected(val vehicleId: VehicleId) : Rejection
+    data class VehicleBusy(val vehicleId: VehicleId) : Rejection
+    data class VehicleAlreadyHealthy(val vehicleId: VehicleId) : Rejection
+    data class MaintenanceNotDue(val vehicleId: VehicleId) : Rejection
     data class ArithmeticFailure(val operation: String) : Rejection
 }
 
@@ -34,6 +43,10 @@ sealed interface GameEvent {
     data class LedgerBooked(val entry: LedgerEntry) : GameEvent
     data class DayClosed(val summary: DailySummary) : GameEvent
     data class TimeAdvanced(val from: GameInstant, val to: GameInstant) : GameEvent
+    data class VehiclePurchased(val vehicleId: VehicleId, val specId: VehicleSpecId) : GameEvent
+    data class VehicleSold(val vehicleId: VehicleId, val proceeds: Money) : GameEvent
+    data class VehicleRepaired(val vehicleId: VehicleId, val cost: Money) : GameEvent
+    data class VehicleMaintained(val vehicleId: VehicleId, val cost: Money) : GameEvent
 }
 
 sealed interface GameResult {
@@ -68,6 +81,10 @@ class GameEngine(
                     val targetDay = Math.addExact(state.gameDay, 1)
                     advance(state, command.commandId, GameInstant(Math.multiplyExact(targetDay.toLong() - 1L, DAY_MILLIS)))
                 }
+                is GameCommand.PurchaseVehicle -> purchaseVehicle(state, command)
+                is GameCommand.SellVehicle -> sellVehicle(state, command)
+                is GameCommand.RepairVehicle -> repairVehicle(state, command)
+                is GameCommand.MaintainVehicle -> maintainVehicle(state, command)
             }
         } catch (_: ArithmeticException) {
             GameResult.Rejected(state, Rejection.ArithmeticFailure(command::class.simpleName ?: "command"))
@@ -92,6 +109,63 @@ class GameEngine(
             catalog.regions.firstOrNull { it.id !in state.progression.unlockedRegionIds }?.let { add(NextTargetProjection("region-${it.id.value}", state.progression.completedJobs.toLong(), it.minimumCompletedJobs.toLong())) }
             if (owned == 0L) add(NextTargetProjection("first-owned-vehicle", 0, 1))
         }
+    }
+
+    private fun purchaseVehicle(state: GameState, command: GameCommand.PurchaseVehicle): GameResult {
+        val spec = catalog.vehicles.firstOrNull { it.id == command.specId && !it.rental } ?: return GameResult.Rejected(state, Rejection.NotFound("vehicleSpec", command.specId.value))
+        val level = state.companyLevel(catalog)
+        if (level < spec.minimumCompanyLevel) return GameResult.Rejected(state, Rejection.CompanyLevelRequired(spec.minimumCompanyLevel, level))
+        if (state.money < spec.purchasePrice) return GameResult.Rejected(state, Rejection.InsufficientFunds(spec.purchasePrice, state.money))
+        val vehicleId = VehicleId("vehicle-${state.nextEntitySequence}")
+        val entry = ledger(state, LedgerType.VEHICLE_PURCHASE, Money(-spec.purchasePrice.cents), vehicleId = vehicleId)
+        val next = markProcessed(state.copy(
+            money = state.money - spec.purchasePrice,
+            nextEntitySequence = Math.addExact(state.nextEntitySequence, 1),
+            vehicles = state.vehicles + VehicleState(vehicleId, spec.id, Ownership.OWNED),
+            ledger = bounded(state.ledger + entry),
+            tutorial = if (state.tutorial.step == TutorialStep.BUY_FIRST_VEHICLE) state.tutorial.copy(step = TutorialStep.HIRE_FIRST_DRIVER) else state.tutorial,
+        ), command.commandId)
+        return GameResult.Applied(next, listOf(GameEvent.LedgerBooked(entry), GameEvent.VehiclePurchased(vehicleId, spec.id)))
+    }
+
+    private fun sellVehicle(state: GameState, command: GameCommand.SellVehicle): GameResult {
+        val vehicle = state.vehicles.firstOrNull { it.id == command.vehicleId } ?: return GameResult.Rejected(state, Rejection.NotFound("vehicle", command.vehicleId.value))
+        if (vehicle.ownership == Ownership.RENTAL) return GameResult.Rejected(state, Rejection.RentalVehicleProtected(vehicle.id))
+        if (vehicle.status == VehicleStatus.BUSY || state.activeJobs.any { it.vehicleId == vehicle.id }) return GameResult.Rejected(state, Rejection.VehicleBusy(vehicle.id))
+        val spec = catalog.vehicles.first { it.id == vehicle.specId }
+        val proceeds = spec.purchasePrice.percentage(spec.resaleBasisPoints).percentage(vehicle.conditionPercent * 100)
+        val entry = ledger(state, LedgerType.VEHICLE_SALE, proceeds, vehicleId = vehicle.id)
+        val next = markProcessed(state.copy(
+            money = state.money + proceeds,
+            nextEntitySequence = Math.addExact(state.nextEntitySequence, 1),
+            vehicles = state.vehicles.filterNot { it.id == vehicle.id },
+            ledger = bounded(state.ledger + entry),
+        ), command.commandId)
+        return GameResult.Applied(next, listOf(GameEvent.LedgerBooked(entry), GameEvent.VehicleSold(vehicle.id, proceeds)))
+    }
+
+    private fun repairVehicle(state: GameState, command: GameCommand.RepairVehicle): GameResult {
+        val vehicle = state.vehicles.firstOrNull { it.id == command.vehicleId } ?: return GameResult.Rejected(state, Rejection.NotFound("vehicle", command.vehicleId.value))
+        if (vehicle.status == VehicleStatus.BUSY || state.activeJobs.any { it.vehicleId == vehicle.id }) return GameResult.Rejected(state, Rejection.VehicleBusy(vehicle.id))
+        if (vehicle.conditionPercent >= 100) return GameResult.Rejected(state, Rejection.VehicleAlreadyHealthy(vehicle.id))
+        val spec = catalog.vehicles.first { it.id == vehicle.specId }
+        val cost = Money(Math.multiplyExact((100 - vehicle.conditionPercent).toLong(), spec.repairCentsPerConditionPoint))
+        if (state.money < cost) return GameResult.Rejected(state, Rejection.InsufficientFunds(cost, state.money))
+        val entry = ledger(state, LedgerType.REPAIR, Money(-cost.cents), vehicleId = vehicle.id)
+        val next = markProcessed(state.copy(money = state.money - cost, nextEntitySequence = state.nextEntitySequence + 1, vehicles = state.vehicles.map { if (it.id == vehicle.id) it.copy(conditionPercent = 100, totalOperatingCosts = it.totalOperatingCosts + cost) else it }, ledger = bounded(state.ledger + entry)), command.commandId)
+        return GameResult.Applied(next, listOf(GameEvent.LedgerBooked(entry), GameEvent.VehicleRepaired(vehicle.id, cost)))
+    }
+
+    private fun maintainVehicle(state: GameState, command: GameCommand.MaintainVehicle): GameResult {
+        val vehicle = state.vehicles.firstOrNull { it.id == command.vehicleId } ?: return GameResult.Rejected(state, Rejection.NotFound("vehicle", command.vehicleId.value))
+        if (vehicle.status == VehicleStatus.BUSY || state.activeJobs.any { it.vehicleId == vehicle.id }) return GameResult.Rejected(state, Rejection.VehicleBusy(vehicle.id))
+        if (vehicle.mileageMeters - vehicle.maintainedAtMeters < catalog.economy.maintenanceIntervalMeters) return GameResult.Rejected(state, Rejection.MaintenanceNotDue(vehicle.id))
+        val spec = catalog.vehicles.first { it.id == vehicle.specId }
+        val cost = spec.purchasePrice.percentage(catalog.economy.maintenanceCostBasisPoints)
+        if (state.money < cost) return GameResult.Rejected(state, Rejection.InsufficientFunds(cost, state.money))
+        val entry = ledger(state, LedgerType.MAINTENANCE, Money(-cost.cents), vehicleId = vehicle.id)
+        val next = markProcessed(state.copy(money = state.money - cost, nextEntitySequence = state.nextEntitySequence + 1, vehicles = state.vehicles.map { if (it.id == vehicle.id) it.copy(conditionPercent = minOf(100, it.conditionPercent + 15), maintainedAtMeters = it.mileageMeters, totalOperatingCosts = it.totalOperatingCosts + cost) else it }, ledger = bounded(state.ledger + entry)), command.commandId)
+        return GameResult.Applied(next, listOf(GameEvent.LedgerBooked(entry), GameEvent.VehicleMaintained(vehicle.id, cost)))
     }
 
     private fun generateOffers(state: GameState, commandId: CommandId): GameResult {
@@ -207,7 +281,7 @@ class GameEngine(
         val next = state.copy(
             money = state.money + refund + revenue - actualCosts,
             nextEntitySequence = sequence,
-            vehicles = state.vehicles.map { if (it.id == job.vehicleId) it.copy(status = VehicleStatus.AVAILABLE, mileageMeters = Math.addExact(it.mileageMeters, job.distanceMeters), totalEarned = it.totalEarned + result.net) else it },
+            vehicles = state.vehicles.map { if (it.id == job.vehicleId) it.copy(status = VehicleStatus.AVAILABLE, conditionPercent = (it.conditionPercent - maxOf(1, Math.toIntExact(job.distanceMeters / 200_000L))).coerceAtLeast(1), mileageMeters = Math.addExact(it.mileageMeters, job.distanceMeters), totalOperatingCosts = it.totalOperatingCosts + actualCosts, totalEarned = it.totalEarned + result.net) else it },
             activeJobs = state.activeJobs.filterNot { it.id == job.id },
             completedJobs = bounded(state.completedJobs + result),
             ledger = bounded(state.ledger + entries),

@@ -10,6 +10,8 @@ data class VehicleState(
     val status: VehicleStatus = VehicleStatus.AVAILABLE,
     val conditionPercent: Int = 100,
     val mileageMeters: Long = 0,
+    val maintainedAtMeters: Long = 0,
+    val totalOperatingCosts: Money = Money.ZERO,
     val totalEarned: Money = Money.ZERO,
     val assignedDriverId: DriverId? = null,
 )
