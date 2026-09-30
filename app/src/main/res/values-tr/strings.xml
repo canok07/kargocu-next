@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kargo Tycoon</string>
+    <string name="welcome_label">YENİ BİR BAŞLANGIÇ</string>
+    <string name="welcome_title">Kendi lojistik ağını kur.</string>
+    <string name="welcome_description">İlk teslimattan büyüyen bir filoya.</string>
+    <string name="company_label">ŞİRKETİN</string>
+</resources>
