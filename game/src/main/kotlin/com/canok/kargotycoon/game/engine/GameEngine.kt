@@ -14,6 +14,10 @@ sealed interface GameCommand {
     data class SellVehicle(override val commandId: CommandId, val vehicleId: VehicleId) : GameCommand
     data class RepairVehicle(override val commandId: CommandId, val vehicleId: VehicleId) : GameCommand
     data class MaintainVehicle(override val commandId: CommandId, val vehicleId: VehicleId) : GameCommand
+    data class HireDriver(override val commandId: CommandId, val tierId: DriverTierId, val name: String) : GameCommand
+    data class FireDriver(override val commandId: CommandId, val driverId: DriverId) : GameCommand
+    data class AssignDriver(override val commandId: CommandId, val driverId: DriverId, val vehicleId: VehicleId) : GameCommand
+    data class UnassignDriver(override val commandId: CommandId, val driverId: DriverId) : GameCommand
 }
 
 sealed interface Rejection {
@@ -33,6 +37,12 @@ sealed interface Rejection {
     data class VehicleBusy(val vehicleId: VehicleId) : Rejection
     data class VehicleAlreadyHealthy(val vehicleId: VehicleId) : Rejection
     data class MaintenanceNotDue(val vehicleId: VehicleId) : Rejection
+    data class InvalidDriverName(val name: String) : Rejection
+    data class DriverBusy(val driverId: DriverId) : Rejection
+    data class DriverAlreadyAssigned(val driverId: DriverId) : Rejection
+    data class VehicleAlreadyAssigned(val vehicleId: VehicleId) : Rejection
+    data class AssignedDriverRequired(val vehicleId: VehicleId) : Rejection
+    data class DriverUnavailable(val driverId: DriverId) : Rejection
     data class ArithmeticFailure(val operation: String) : Rejection
 }
 
@@ -47,6 +57,10 @@ sealed interface GameEvent {
     data class VehicleSold(val vehicleId: VehicleId, val proceeds: Money) : GameEvent
     data class VehicleRepaired(val vehicleId: VehicleId, val cost: Money) : GameEvent
     data class VehicleMaintained(val vehicleId: VehicleId, val cost: Money) : GameEvent
+    data class DriverHired(val driverId: DriverId, val tierId: DriverTierId) : GameEvent
+    data class DriverFired(val driverId: DriverId, val severance: Money) : GameEvent
+    data class DriverAssigned(val driverId: DriverId, val vehicleId: VehicleId) : GameEvent
+    data class DriverUnassigned(val driverId: DriverId, val vehicleId: VehicleId) : GameEvent
 }
 
 sealed interface GameResult {
@@ -85,6 +99,10 @@ class GameEngine(
                 is GameCommand.SellVehicle -> sellVehicle(state, command)
                 is GameCommand.RepairVehicle -> repairVehicle(state, command)
                 is GameCommand.MaintainVehicle -> maintainVehicle(state, command)
+                is GameCommand.HireDriver -> hireDriver(state, command)
+                is GameCommand.FireDriver -> fireDriver(state, command)
+                is GameCommand.AssignDriver -> assignDriver(state, command)
+                is GameCommand.UnassignDriver -> unassignDriver(state, command)
             }
         } catch (_: ArithmeticException) {
             GameResult.Rejected(state, Rejection.ArithmeticFailure(command::class.simpleName ?: "command"))
@@ -111,6 +129,67 @@ class GameEngine(
         }
     }
 
+    private fun hireDriver(state: GameState, command: GameCommand.HireDriver): GameResult {
+        val tier = catalog.driverTiers.firstOrNull { it.id == command.tierId } ?: return GameResult.Rejected(state, Rejection.NotFound("driverTier", command.tierId.value))
+        if (command.name.isBlank() || command.name.length > 40) return GameResult.Rejected(state, Rejection.InvalidDriverName(command.name))
+        val level = state.companyLevel(catalog)
+        if (level < tier.minimumCompanyLevel) return GameResult.Rejected(state, Rejection.CompanyLevelRequired(tier.minimumCompanyLevel, level))
+        if (state.money < tier.hiringCost) return GameResult.Rejected(state, Rejection.InsufficientFunds(tier.hiringCost, state.money))
+        val driverId = DriverId("driver-${state.nextEntitySequence}")
+        val entry = ledger(state, LedgerType.DRIVER_HIRE, Money(-tier.hiringCost.cents), driverId = driverId)
+        val next = markProcessed(state.copy(
+            money = state.money - tier.hiringCost,
+            nextEntitySequence = state.nextEntitySequence + 1,
+            drivers = state.drivers + DriverState(driverId, tier.id, command.name.trim()),
+            ledger = bounded(state.ledger + entry),
+            tutorial = if (state.tutorial.step == TutorialStep.HIRE_FIRST_DRIVER) state.tutorial.copy(step = TutorialStep.START_PARALLEL_JOBS) else state.tutorial,
+        ), command.commandId)
+        return GameResult.Applied(next, listOf(GameEvent.LedgerBooked(entry), GameEvent.DriverHired(driverId, tier.id)))
+    }
+
+    private fun fireDriver(state: GameState, command: GameCommand.FireDriver): GameResult {
+        val driver = state.drivers.firstOrNull { it.id == command.driverId } ?: return GameResult.Rejected(state, Rejection.NotFound("driver", command.driverId.value))
+        if (driver.status == DriverStatus.DRIVING || state.activeJobs.any { it.driverId == driver.id }) return GameResult.Rejected(state, Rejection.DriverBusy(driver.id))
+        val tier = catalog.driverTiers.first { it.id == driver.tierId }
+        val severance = tier.dailyWage * catalog.economy.severanceWageDays.toLong()
+        if (state.money < severance) return GameResult.Rejected(state, Rejection.InsufficientFunds(severance, state.money))
+        val entry = ledger(state, LedgerType.DRIVER_SEVERANCE, Money(-severance.cents), driverId = driver.id)
+        val next = markProcessed(state.copy(
+            money = state.money - severance,
+            nextEntitySequence = state.nextEntitySequence + 1,
+            drivers = state.drivers.filterNot { it.id == driver.id },
+            vehicles = state.vehicles.map { if (it.assignedDriverId == driver.id) it.copy(assignedDriverId = null) else it },
+            ledger = bounded(state.ledger + entry),
+        ), command.commandId)
+        return GameResult.Applied(next, listOf(GameEvent.LedgerBooked(entry), GameEvent.DriverFired(driver.id, severance)))
+    }
+
+    private fun assignDriver(state: GameState, command: GameCommand.AssignDriver): GameResult {
+        val driver = state.drivers.firstOrNull { it.id == command.driverId } ?: return GameResult.Rejected(state, Rejection.NotFound("driver", command.driverId.value))
+        val vehicle = state.vehicles.firstOrNull { it.id == command.vehicleId } ?: return GameResult.Rejected(state, Rejection.NotFound("vehicle", command.vehicleId.value))
+        if (driver.status != DriverStatus.AVAILABLE) return GameResult.Rejected(state, Rejection.DriverUnavailable(driver.id))
+        if (driver.assignedVehicleId != null) return GameResult.Rejected(state, Rejection.DriverAlreadyAssigned(driver.id))
+        if (vehicle.assignedDriverId != null) return GameResult.Rejected(state, Rejection.VehicleAlreadyAssigned(vehicle.id))
+        if (vehicle.status != VehicleStatus.AVAILABLE || state.activeJobs.any { it.vehicleId == vehicle.id }) return GameResult.Rejected(state, Rejection.VehicleBusy(vehicle.id))
+        val next = markProcessed(state.copy(
+            drivers = state.drivers.map { if (it.id == driver.id) it.copy(assignedVehicleId = vehicle.id) else it },
+            vehicles = state.vehicles.map { if (it.id == vehicle.id) it.copy(assignedDriverId = driver.id) else it },
+        ), command.commandId)
+        return GameResult.Applied(next, listOf(GameEvent.DriverAssigned(driver.id, vehicle.id)))
+    }
+
+    private fun unassignDriver(state: GameState, command: GameCommand.UnassignDriver): GameResult {
+        val driver = state.drivers.firstOrNull { it.id == command.driverId } ?: return GameResult.Rejected(state, Rejection.NotFound("driver", command.driverId.value))
+        val vehicleId = driver.assignedVehicleId ?: return GameResult.Rejected(state, Rejection.NotFound("assignment", driver.id.value))
+        if (driver.status == DriverStatus.DRIVING || state.activeJobs.any { it.driverId == driver.id }) return GameResult.Rejected(state, Rejection.DriverBusy(driver.id))
+        if (state.vehicles.first { it.id == vehicleId }.status == VehicleStatus.BUSY) return GameResult.Rejected(state, Rejection.VehicleBusy(vehicleId))
+        val next = markProcessed(state.copy(
+            drivers = state.drivers.map { if (it.id == driver.id) it.copy(assignedVehicleId = null) else it },
+            vehicles = state.vehicles.map { if (it.id == vehicleId) it.copy(assignedDriverId = null) else it },
+        ), command.commandId)
+        return GameResult.Applied(next, listOf(GameEvent.DriverUnassigned(driver.id, vehicleId)))
+    }
+
     private fun purchaseVehicle(state: GameState, command: GameCommand.PurchaseVehicle): GameResult {
         val spec = catalog.vehicles.firstOrNull { it.id == command.specId && !it.rental } ?: return GameResult.Rejected(state, Rejection.NotFound("vehicleSpec", command.specId.value))
         val level = state.companyLevel(catalog)
@@ -132,6 +211,7 @@ class GameEngine(
         val vehicle = state.vehicles.firstOrNull { it.id == command.vehicleId } ?: return GameResult.Rejected(state, Rejection.NotFound("vehicle", command.vehicleId.value))
         if (vehicle.ownership == Ownership.RENTAL) return GameResult.Rejected(state, Rejection.RentalVehicleProtected(vehicle.id))
         if (vehicle.status == VehicleStatus.BUSY || state.activeJobs.any { it.vehicleId == vehicle.id }) return GameResult.Rejected(state, Rejection.VehicleBusy(vehicle.id))
+        if (vehicle.assignedDriverId != null) return GameResult.Rejected(state, Rejection.VehicleAlreadyAssigned(vehicle.id))
         val spec = catalog.vehicles.first { it.id == vehicle.specId }
         val proceeds = spec.purchasePrice.percentage(spec.resaleBasisPoints).percentage(vehicle.conditionPercent * 100)
         val entry = ledger(state, LedgerType.VEHICLE_SALE, proceeds, vehicleId = vehicle.id)
@@ -203,6 +283,9 @@ class GameEngine(
         val vehicle = state.vehicles.firstOrNull { it.id == command.vehicleId } ?: return GameResult.Rejected(state, Rejection.NotFound("vehicle", command.vehicleId.value))
         if (vehicle.status != VehicleStatus.AVAILABLE || state.activeJobs.any { it.vehicleId == vehicle.id }) return GameResult.Rejected(state, Rejection.VehicleUnavailable(vehicle.id))
         if (command.manualDriving && state.activeJobs.any { it.manualDriving }) return GameResult.Rejected(state, Rejection.ManualDriverBusy)
+        val assignedDriver = vehicle.assignedDriverId?.let { id -> state.drivers.firstOrNull { it.id == id } }
+        if (!command.manualDriving && assignedDriver == null) return GameResult.Rejected(state, Rejection.AssignedDriverRequired(vehicle.id))
+        if (!command.manualDriving && assignedDriver?.status != DriverStatus.AVAILABLE) return GameResult.Rejected(state, Rejection.DriverUnavailable(checkNotNull(assignedDriver).id))
         val spec = catalog.vehicles.first { it.id == vehicle.specId }
         if (offer.count > spec.capacityCount || offer.totalWeightGrams > spec.capacityGrams) return GameResult.Rejected(state, Rejection.CapacityExceeded(spec.capacityCount, offer.count, spec.capacityGrams, offer.totalWeightGrams))
         val missing = offer.requiredCapabilities - spec.capabilities
@@ -218,13 +301,16 @@ class GameEngine(
         val riskRoll = pick(state.randomSeed, state.randomCounter, 1_000_000)
         val duration = Math.multiplyExact(route.durationGameMinutes.toLong(), MINUTE_MILLIS)
         val risk = catalog.risks.first { it.id == offer.riskId }
-        val job = ActiveJob(jobId, offer.id, vehicle.id, vehicle.assignedDriverId, command.manualDriving, route.id, risk.id, risk.chancePerMillion, state.gameTime, state.gameTime.plusMillis(duration), state.gameTime.plusMillis(duration), invoice, reservation, reservedOperatingCosts, distanceMeters = route.distanceMeters, riskRollPerMillion = riskRoll)
+        val driverErrorChance = assignedDriver?.let { driver -> catalog.driverTiers.first { it.id == driver.tierId }.errorChancePerMillion } ?: 0
+        val snapshottedRiskChance = Math.addExact(risk.chancePerMillion, driverErrorChance).coerceAtMost(250_000)
+        val job = ActiveJob(jobId, offer.id, vehicle.id, if (command.manualDriving) null else assignedDriver?.id, command.manualDriving, route.id, risk.id, snapshottedRiskChance, state.gameTime, state.gameTime.plusMillis(duration), state.gameTime.plusMillis(duration), invoice, reservation, reservedOperatingCosts, distanceMeters = route.distanceMeters, riskRollPerMillion = riskRoll)
         val entry = ledger(state, LedgerType.RESERVATION, Money(-reservation.cents), jobId = jobId, vehicleId = vehicle.id)
         val next = state.copy(
             money = state.money - reservation,
             nextEntitySequence = Math.addExact(state.nextEntitySequence, 1),
             randomCounter = Math.addExact(state.randomCounter, 1),
             vehicles = state.vehicles.map { if (it.id == vehicle.id) it.copy(status = VehicleStatus.BUSY) else it },
+            drivers = state.drivers.map { if (it.id == job.driverId) it.copy(status = DriverStatus.DRIVING) else it },
             offers = state.offers.filterNot { it.id == offer.id },
             activeJobs = state.activeJobs + job,
             ledger = bounded(state.ledger + entry),
@@ -264,7 +350,12 @@ class GameEngine(
         val spec = catalog.vehicles.first { it.id == state.vehicles.first { vehicle -> vehicle.id == job.vehicleId }.specId }
         val workedDays = ((job.completionAt.millis - job.startedAt.millis) / DAY_MILLIS + 1L).coerceAtLeast(1L)
         val upkeep = spec.dailyUpkeep * workedDays
-        val actualCosts = actualFuel + rental + penalty + upkeep
+        val driver = job.driverId?.let { id -> state.drivers.first { it.id == id } }
+        val firstWorkedDay = Math.toIntExact(job.startedAt.millis / DAY_MILLIS + 1L)
+        val workedDayIds = (0L until workedDays).map { Math.addExact(firstWorkedDay, Math.toIntExact(it)) }.toSet()
+        val newlyChargedDays = driver?.let { workedDayIds - it.wageChargedGameDays } ?: emptySet()
+        val wage = driver?.let { catalog.driverTiers.first { tier -> tier.id == it.tierId }.dailyWage * newlyChargedDays.size.toLong() } ?: Money.ZERO
+        val actualCosts = actualFuel + rental + penalty + upkeep + wage
         val refund = job.reserved
         val revenue = job.invoice.maximumRevenue
         val result = JobResult(job.id, job.completionAt, job.completionAt <= job.dueAt, riskOccurred, revenue, actualCosts, revenue - actualCosts)
@@ -275,13 +366,15 @@ class GameEngine(
             if (rental.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.RENTAL, Money(-rental.cents), job.id, job.vehicleId))
             if (penalty.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.PENALTY, Money(-penalty.cents), job.id, job.vehicleId))
             if (upkeep.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.VEHICLE_UPKEEP, Money(-upkeep.cents), job.id, job.vehicleId))
+            if (wage.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.DRIVER_WAGE, Money(-wage.cents), job.id, job.vehicleId, job.driverId))
             add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.REVENUE, revenue, job.id, job.vehicleId))
         }
         val vehicle = state.vehicles.first { it.id == job.vehicleId }
         val next = state.copy(
             money = state.money + refund + revenue - actualCosts,
             nextEntitySequence = sequence,
-            vehicles = state.vehicles.map { if (it.id == job.vehicleId) it.copy(status = VehicleStatus.AVAILABLE, conditionPercent = (it.conditionPercent - maxOf(1, Math.toIntExact(job.distanceMeters / 200_000L))).coerceAtLeast(1), mileageMeters = Math.addExact(it.mileageMeters, job.distanceMeters), totalOperatingCosts = it.totalOperatingCosts + actualCosts, totalEarned = it.totalEarned + result.net) else it },
+            vehicles = state.vehicles.map { if (it.id == job.vehicleId) it.copy(status = VehicleStatus.AVAILABLE, conditionPercent = (it.conditionPercent - maxOf(1, Math.toIntExact(job.distanceMeters / 200_000L))).coerceAtLeast(1), mileageMeters = Math.addExact(it.mileageMeters, job.distanceMeters), totalOperatingCosts = it.totalOperatingCosts + actualCosts - wage, totalEarned = it.totalEarned + result.net) else it },
+            drivers = state.drivers.map { if (it.id == job.driverId) it.copy(status = DriverStatus.AVAILABLE, experienceJobs = Math.addExact(it.experienceJobs, 1), wageChargedGameDays = it.wageChargedGameDays + newlyChargedDays) else it },
             activeJobs = state.activeJobs.filterNot { it.id == job.id },
             completedJobs = bounded(state.completedJobs + result),
             ledger = bounded(state.ledger + entries),
@@ -318,7 +411,7 @@ class GameEngine(
         return state.copy(progression = state.progression.copy(unlockedRegionIds = state.progression.unlockedRegionIds + unlocked))
     }
 
-    private fun ledger(state: GameState, type: LedgerType, amount: Money, jobId: JobId? = null, vehicleId: VehicleId? = null): LedgerEntry = LedgerEntry(LedgerEntryId("ledger-${state.nextEntitySequence}"), state.gameTime, type, amount, jobId, vehicleId)
+    private fun ledger(state: GameState, type: LedgerType, amount: Money, jobId: JobId? = null, vehicleId: VehicleId? = null, driverId: DriverId? = null): LedgerEntry = LedgerEntry(LedgerEntryId("ledger-${state.nextEntitySequence}"), state.gameTime, type, amount, jobId, vehicleId, driverId)
     private fun markProcessed(state: GameState, id: CommandId): GameState = state.copy(processedCommandIds = bounded(state.processedCommandIds + id))
     private fun <T> bounded(values: List<T>): List<T> = if (values.size <= catalog.economy.historyLimit) values else values.takeLast(catalog.economy.historyLimit)
 
