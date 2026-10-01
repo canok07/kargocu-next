@@ -38,7 +38,7 @@ class GameEngineTest {
     @Test
     fun capabilityAndInsufficientFundsRejectWithoutMutation() {
         val base = generated()
-        val refrigerated = base.offers.first().copy(id = OfferId("cold"), requiredCapabilities = setOf(Capability.REFRIGERATED), count = 1, totalWeightGrams = 1000)
+        val refrigerated = base.offers.first().copy(id = OfferId("cold"), packageTypeId = PackageTypeId("parcel"), requiredCapabilities = setOf(Capability.REFRIGERATED), count = 1, totalWeightGrams = 2_000)
         val capabilityState = base.copy(offers = listOf(refrigerated))
         val capabilityResult = engine.reduce(capabilityState, accept(refrigerated)) as GameResult.Rejected
         assertTrue(capabilityResult.reason is Rejection.MissingCapability)

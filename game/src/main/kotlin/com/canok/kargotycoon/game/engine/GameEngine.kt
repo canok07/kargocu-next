@@ -83,6 +83,8 @@ class GameEngine(
 ) {
     fun reduce(state: GameState, command: GameCommand): GameResult {
         if (command.commandId in state.processedCommandIds) return GameResult.Rejected(state, Rejection.DuplicateCommand(command.commandId))
+        val inputIssues = GameStateValidator.validate(state, catalog)
+        if (inputIssues.isNotEmpty()) return GameResult.Rejected(state, Rejection.StateInvariantViolation(inputIssues))
         return try {
             val result = when (command) {
                 is GameCommand.GenerateDailyOffers -> generateOffers(state, command.commandId)
@@ -256,11 +258,19 @@ class GameEngine(
     }
 
     private fun generateOffers(state: GameState, commandId: CommandId): GameResult {
+        if (state.offersGeneratedGameDay == state.gameDay) return GameResult.Applied(markProcessed(state, commandId), emptyList())
+        if (state.offersGeneratedGameDay == null && state.offers.isNotEmpty()) return GameResult.Applied(markProcessed(state.copy(offersGeneratedGameDay = state.gameDay), commandId), emptyList())
+        val generated = createDailyOffers(state) ?: return GameResult.Rejected(state, Rejection.NotFound("route", "unlocked"))
+        val next = markProcessed(generated, commandId)
+        return GameResult.Applied(next, listOf(GameEvent.OffersGenerated(state.gameDay, generated.offers.size)))
+    }
+
+    private fun createDailyOffers(state: GameState): GameState? {
         var counter = state.randomCounter
         val unlockedLocations = catalog.locations.filter { it.regionId in state.progression.unlockedRegionIds }.map { it.id }.toSet()
         val routes = catalog.routes.filter { it.originId in unlockedLocations && it.destinationId in unlockedLocations }
-        if (routes.isEmpty()) return GameResult.Rejected(state, Rejection.NotFound("route", "unlocked"))
-        val offers = List(catalog.economy.offersPerDay) { index ->
+        if (routes.isEmpty()) return null
+        var offers = List(catalog.economy.offersPerDay) { index ->
             val route = routes[pick(state.randomSeed, counter++, routes.size)]
             val packageType = catalog.packageTypes[pick(state.randomSeed, counter++, catalog.packageTypes.size)]
             val risk = catalog.risks[pick(state.randomSeed, counter++, catalog.risks.size)]
@@ -279,38 +289,74 @@ class GameEngine(
                 risk.id,
                 state.gameTime.plusMillis(Math.multiplyExact(catalog.economy.offerLifetimeGameMinutes.toLong(), MINUTE_MILLIS)),
             )
-        }.sortedBy { it.id.value }
-        val next = markProcessed(state.copy(offers = offers, randomCounter = counter), commandId)
-        return GameResult.Applied(next, listOf(GameEvent.OffersGenerated(state.gameDay, offers.size)))
+        }
+        val starter = catalog.vehicles.first { it.id == catalog.starterVehicleSpecId }
+        if (offers.none { isStarterAffordable(it, starter, state.gameTime, state.money) }) {
+            val route = routes.first { it.requiredCapabilities.all(starter.capabilities::contains) }
+            val packageType = catalog.packageTypes.first { it.capabilities.all(starter.capabilities::contains) && it.minWeightGrams <= starter.capacityGrams }
+            val risk = catalog.risks.minBy { it.penaltyBasisPoints }
+            val original = offers.first()
+            offers = offers.toMutableList().also { generated ->
+                generated[0] = original.copy(
+                    packageTypeId = packageType.id,
+                    count = 1,
+                    totalWeightGrams = packageType.minWeightGrams,
+                    originId = route.originId,
+                    destinationId = route.destinationId,
+                    routeOptions = listOf(route.id),
+                    requiredCapabilities = packageType.capabilities + route.requiredCapabilities,
+                    riskId = risk.id,
+                )
+            }
+        }
+        return state.copy(offers = offers.sortedBy { it.id.value }, randomCounter = counter, offersGeneratedGameDay = state.gameDay)
+    }
+
+    private fun isStarterAffordable(offer: JobOffer, starter: VehicleSpec, gameTime: GameInstant, money: Money): Boolean {
+        if (offer.count > starter.capacityCount || offer.totalWeightGrams > starter.capacityGrams || !offer.requiredCapabilities.all(starter.capabilities::contains)) return false
+        return offer.routeOptions.any { routeId ->
+            val route = catalog.routes.first { it.id == routeId }
+            val risk = catalog.risks.first { it.id == offer.riskId }
+            val completionAt = gameTime.plusMillis(Math.multiplyExact(route.durationGameMinutes.toLong(), MINUTE_MILLIS))
+            acceptanceInvoice(offer, route, starter, Ownership.RENTAL, risk, gameTime, completionAt, emptySet(), emptySet(), null).maximumReservation <= money
+        }
     }
 
     private fun acceptJob(state: GameState, command: GameCommand.AcceptJob): GameResult {
         val offer = state.offers.firstOrNull { it.id == command.offerId } ?: return GameResult.Rejected(state, Rejection.NotFound("offer", command.offerId.value))
         if (offer.expiresAt <= state.gameTime) return GameResult.Rejected(state, Rejection.OfferExpired(offer.id))
+        val packageType = catalog.packageTypes.firstOrNull { it.id == offer.packageTypeId } ?: return GameResult.Rejected(state, Rejection.NotFound("packageType", offer.packageTypeId.value))
+        val risk = catalog.risks.firstOrNull { it.id == offer.riskId } ?: return GameResult.Rejected(state, Rejection.NotFound("risk", offer.riskId.value))
+        val origin = catalog.locations.firstOrNull { it.id == offer.originId } ?: return GameResult.Rejected(state, Rejection.NotFound("location", offer.originId.value))
+        val destination = catalog.locations.firstOrNull { it.id == offer.destinationId } ?: return GameResult.Rejected(state, Rejection.NotFound("location", offer.destinationId.value))
+        if (offer.count <= 0 || offer.totalWeightGrams <= 0) return GameResult.Rejected(state, Rejection.StateInvariantViolation(listOf(StateIssue.InvalidValue("offer:${offer.id.value}"))))
         val vehicle = state.vehicles.firstOrNull { it.id == command.vehicleId } ?: return GameResult.Rejected(state, Rejection.NotFound("vehicle", command.vehicleId.value))
+        val spec = catalog.vehicles.firstOrNull { it.id == vehicle.specId } ?: return GameResult.Rejected(state, Rejection.NotFound("vehicleSpec", vehicle.specId.value))
         if (vehicle.status != VehicleStatus.AVAILABLE || state.activeJobs.any { it.vehicleId == vehicle.id }) return GameResult.Rejected(state, Rejection.VehicleUnavailable(vehicle.id))
         if (command.manualDriving && state.activeJobs.any { it.manualDriving }) return GameResult.Rejected(state, Rejection.ManualDriverBusy)
         val assignedDriver = vehicle.assignedDriverId?.let { id -> state.drivers.firstOrNull { it.id == id } }
         if (!command.manualDriving && assignedDriver == null) return GameResult.Rejected(state, Rejection.AssignedDriverRequired(vehicle.id))
         if (!command.manualDriving && assignedDriver?.status != DriverStatus.AVAILABLE) return GameResult.Rejected(state, Rejection.DriverUnavailable(checkNotNull(assignedDriver).id))
-        val spec = catalog.vehicles.first { it.id == vehicle.specId }
+        val driverTier = assignedDriver?.let { driver -> catalog.driverTiers.firstOrNull { it.id == driver.tierId } }
+        if (assignedDriver != null && driverTier == null) return GameResult.Rejected(state, Rejection.NotFound("driverTier", assignedDriver.tierId.value))
         if (offer.count > spec.capacityCount || offer.totalWeightGrams > spec.capacityGrams) return GameResult.Rejected(state, Rejection.CapacityExceeded(spec.capacityCount, offer.count, spec.capacityGrams, offer.totalWeightGrams))
         val missing = offer.requiredCapabilities - spec.capabilities
         if (missing.isNotEmpty()) return GameResult.Rejected(state, Rejection.MissingCapability(missing))
-        val route = catalog.routes.firstOrNull { it.id == command.routeId && it.id in offer.routeOptions } ?: return GameResult.Rejected(state, Rejection.RouteUnavailable(command.routeId))
-        val destinationRegion = catalog.locations.first { it.id == route.destinationId }.regionId
-        if (destinationRegion !in state.progression.unlockedRegionIds) return GameResult.Rejected(state, Rejection.RegionLocked(destinationRegion))
-        val invoice = quote(offer, route.id)
-        val reservedOperatingCosts = spec.dailyUpkeep
-        val reservation = invoice.maximumReservation + reservedOperatingCosts
+        val route = catalog.routes.firstOrNull { it.id == command.routeId } ?: return GameResult.Rejected(state, Rejection.NotFound("route", command.routeId.value))
+        if (route.id !in offer.routeOptions || route.originId != origin.id || route.destinationId != destination.id) return GameResult.Rejected(state, Rejection.RouteUnavailable(command.routeId))
+        if (destination.regionId !in state.progression.unlockedRegionIds) return GameResult.Rejected(state, Rejection.RegionLocked(destination.regionId))
+        val duration = Math.multiplyExact(route.durationGameMinutes.toLong(), MINUTE_MILLIS)
+        val completionAt = state.gameTime.plusMillis(duration)
+        val workedDays = workedGameDays(state.gameTime, completionAt)
+        val invoice = acceptanceInvoice(offer, route, spec, vehicle.ownership, risk, state.gameTime, completionAt, vehicle.upkeepChargedGameDays, assignedDriver?.wageChargedGameDays.orEmpty(), driverTier)
+        val reservation = invoice.maximumReservation
         if (state.money < reservation) return GameResult.Rejected(state, Rejection.InsufficientFunds(reservation, state.money))
         val jobId = JobId("job-${state.nextEntitySequence}")
         val riskRoll = pick(state.randomSeed, state.randomCounter, 1_000_000)
-        val duration = Math.multiplyExact(route.durationGameMinutes.toLong(), MINUTE_MILLIS)
-        val risk = catalog.risks.first { it.id == offer.riskId }
-        val driverErrorChance = assignedDriver?.let { driver -> catalog.driverTiers.first { it.id == driver.tierId }.errorChancePerMillion } ?: 0
+        val driverErrorChance = driverTier?.errorChancePerMillion ?: 0
         val snapshottedRiskChance = Math.addExact(risk.chancePerMillion, driverErrorChance).coerceAtMost(250_000)
-        val job = ActiveJob(jobId, offer.id, vehicle.id, if (command.manualDriving) null else assignedDriver?.id, command.manualDriving, route.id, risk.id, snapshottedRiskChance, state.gameTime, state.gameTime.plusMillis(duration), state.gameTime.plusMillis(duration), invoice, reservation, reservedOperatingCosts, distanceMeters = route.distanceMeters, riskRollPerMillion = riskRoll)
+        val operatingReservation = invoice.reservedUpkeep + invoice.reservedDriverWage
+        val job = ActiveJob(jobId, offer.id, vehicle.id, if (command.manualDriving) null else assignedDriver?.id, command.manualDriving, route.id, risk.id, snapshottedRiskChance, state.gameTime, completionAt, completionAt, invoice, reservation, operatingReservation, workedDays, route.distanceMeters, riskRoll)
         val entry = ledger(state, LedgerType.RESERVATION, Money(-reservation.cents), jobId = jobId, vehicleId = vehicle.id)
         val activeAfterAcceptance = state.activeJobs.size + 1
         val tutorial = when {
@@ -351,44 +397,44 @@ class GameEngine(
         val from = original.gameTime
         state = state.copy(gameTime = target, gameDay = targetDay, offers = state.offers.filter { it.expiresAt > target })
         state = unlockRegions(state)
+        if (targetDay > oldDay && state.offersGeneratedGameDay != targetDay) {
+            state = checkNotNull(createDailyOffers(state))
+            events += GameEvent.OffersGenerated(targetDay, state.offers.size)
+        }
         events += GameEvent.TimeAdvanced(from, target)
         return GameResult.Applied(markProcessed(state, commandId), events)
     }
 
     private fun settle(state: GameState, job: ActiveJob): Pair<GameState, List<GameEvent>> {
-        val risk = catalog.risks.first { it.id == job.riskId }
         val riskOccurred = job.riskRollPerMillion < job.riskChancePerMillion
-        val penalty = if (riskOccurred) job.invoice.maximumRevenue.percentage(risk.penaltyBasisPoints).let { minOf(it, job.invoice.reservedPenalty) } else Money.ZERO
-        val actualFuel = Money(Math.multiplyExact(job.distanceMeters / 1_000L, catalog.vehicles.first { it.id == state.vehicles.first { vehicle -> vehicle.id == job.vehicleId }.specId }.fuelCentsPerKilometer))
-        val rental = if (state.vehicles.first { it.id == job.vehicleId }.ownership == Ownership.RENTAL) job.invoice.reservedRental else Money.ZERO
-        val spec = catalog.vehicles.first { it.id == state.vehicles.first { vehicle -> vehicle.id == job.vehicleId }.specId }
-        val workedDays = ((job.completionAt.millis - job.startedAt.millis) / DAY_MILLIS + 1L).coerceAtLeast(1L)
-        val upkeep = spec.dailyUpkeep * workedDays
+        val penalty = if (riskOccurred) job.invoice.maximumRevenue.percentage(job.invoice.penaltyBasisPoints).let { minOf(it, job.invoice.reservedPenalty) } else Money.ZERO
+        val fuel = job.invoice.reservedFuel
+        val rental = job.invoice.reservedRental
+        val vehicle = state.vehicles.first { it.id == job.vehicleId }
+        val newlyChargedUpkeepDays = job.chargedOperatingGameDays - vehicle.upkeepChargedGameDays
+        val upkeep = if (newlyChargedUpkeepDays.isEmpty()) Money.ZERO else job.invoice.reservedUpkeep
         val driver = job.driverId?.let { id -> state.drivers.first { it.id == id } }
-        val firstWorkedDay = Math.toIntExact(job.startedAt.millis / DAY_MILLIS + 1L)
-        val workedDayIds = (0L until workedDays).map { Math.addExact(firstWorkedDay, Math.toIntExact(it)) }.toSet()
-        val newlyChargedDays = driver?.let { workedDayIds - it.wageChargedGameDays } ?: emptySet()
-        val wage = driver?.let { catalog.driverTiers.first { tier -> tier.id == it.tierId }.dailyWage * newlyChargedDays.size.toLong() } ?: Money.ZERO
-        val actualCosts = actualFuel + rental + penalty + upkeep + wage
-        val refund = job.reserved
+        val newlyChargedWageDays = driver?.let { job.chargedOperatingGameDays - it.wageChargedGameDays }.orEmpty()
+        val wage = if (newlyChargedWageDays.isEmpty()) Money.ZERO else job.invoice.reservedDriverWage
+        val actualCosts = fuel + rental + penalty + upkeep + wage
+        check(actualCosts <= job.reserved)
         val revenue = job.invoice.maximumRevenue
         val result = JobResult(job.id, job.completionAt, job.completionAt <= job.dueAt, riskOccurred, revenue, actualCosts, revenue - actualCosts)
         var sequence = state.nextEntitySequence
         val entries = buildList {
-            add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.RESERVATION_REFUND, job.reserved, job.id, job.vehicleId))
-            if (actualFuel.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.FUEL, Money(-actualFuel.cents), job.id, job.vehicleId))
+            if (job.reserved.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.RESERVATION_REFUND, job.reserved, job.id, job.vehicleId))
+            if (fuel.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.FUEL, Money(-fuel.cents), job.id, job.vehicleId))
             if (rental.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.RENTAL, Money(-rental.cents), job.id, job.vehicleId))
             if (penalty.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.PENALTY, Money(-penalty.cents), job.id, job.vehicleId))
             if (upkeep.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.VEHICLE_UPKEEP, Money(-upkeep.cents), job.id, job.vehicleId))
             if (wage.cents > 0) add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.DRIVER_WAGE, Money(-wage.cents), job.id, job.vehicleId, job.driverId))
             add(LedgerEntry(LedgerEntryId("ledger-${sequence++}"), job.completionAt, LedgerType.REVENUE, revenue, job.id, job.vehicleId))
         }
-        val vehicle = state.vehicles.first { it.id == job.vehicleId }
         val next = state.copy(
-            money = state.money + refund + revenue - actualCosts,
+            money = state.money + job.reserved + revenue - actualCosts,
             nextEntitySequence = sequence,
-            vehicles = state.vehicles.map { if (it.id == job.vehicleId) it.copy(status = VehicleStatus.AVAILABLE, conditionPercent = (it.conditionPercent - maxOf(1, Math.toIntExact(job.distanceMeters / 200_000L))).coerceAtLeast(1), mileageMeters = Math.addExact(it.mileageMeters, job.distanceMeters), totalOperatingCosts = it.totalOperatingCosts + actualCosts - wage, totalEarned = it.totalEarned + result.net) else it },
-            drivers = state.drivers.map { if (it.id == job.driverId) it.copy(status = DriverStatus.AVAILABLE, experienceJobs = Math.addExact(it.experienceJobs, 1), wageChargedGameDays = it.wageChargedGameDays + newlyChargedDays) else it },
+            vehicles = state.vehicles.map { if (it.id == job.vehicleId) it.copy(status = VehicleStatus.AVAILABLE, conditionPercent = (it.conditionPercent - maxOf(1, Math.toIntExact(job.distanceMeters / 200_000L))).coerceAtLeast(1), mileageMeters = Math.addExact(it.mileageMeters, job.distanceMeters), totalOperatingCosts = it.totalOperatingCosts + actualCosts - wage, totalEarned = it.totalEarned + result.net, upkeepChargedGameDays = it.upkeepChargedGameDays + newlyChargedUpkeepDays) else it },
+            drivers = state.drivers.map { if (it.id == job.driverId) it.copy(status = DriverStatus.AVAILABLE, experienceJobs = Math.addExact(it.experienceJobs, 1), wageChargedGameDays = it.wageChargedGameDays + newlyChargedWageDays) else it },
             activeJobs = state.activeJobs.filterNot { it.id == job.id },
             completedJobs = bounded(state.completedJobs + result),
             ledger = bounded(state.ledger + entries),
@@ -399,24 +445,54 @@ class GameEngine(
     }
 
     private fun quote(offer: JobOffer, routeId: RouteId): JobInvoice {
-        val packageType = catalog.packageTypes.first { it.id == offer.packageTypeId }
         val route = catalog.routes.first { it.id == routeId }
         val risk = catalog.risks.first { it.id == offer.riskId }
+        val vehicle = catalog.vehicles.maxBy { it.fuelCentsPerKilometer }
+        val startAt = GameInstant(offer.expiresAt.millis - Math.multiplyExact(catalog.economy.offerLifetimeGameMinutes.toLong(), MINUTE_MILLIS))
+        val completionAt = startAt.plusMillis(Math.multiplyExact(route.durationGameMinutes.toLong(), MINUTE_MILLIS))
+        return acceptanceInvoice(offer, route, vehicle, Ownership.RENTAL, risk, startAt, completionAt, emptySet(), emptySet(), null)
+    }
+
+    private fun acceptanceInvoice(
+        offer: JobOffer,
+        route: RouteSpec,
+        vehicle: VehicleSpec,
+        ownership: Ownership,
+        risk: RiskSpec,
+        startAt: GameInstant,
+        completionAt: GameInstant,
+        chargedUpkeepDays: Set<Int>,
+        chargedWageDays: Set<Int>,
+        driverTier: DriverTier?,
+    ): JobInvoice {
+        val packageType = catalog.packageTypes.first { it.id == offer.packageTypeId }
         val distance = Money(Math.multiplyExact(route.distanceMeters / 1_000L, catalog.economy.distanceRewardCentsPerKilometer))
         val base = packageType.baseReward + Money(Math.multiplyExact(offer.count.toLong(), 150L))
         val riskBonus = (base + distance).percentage(risk.rewardBasisPoints)
-        val fuel = Money(Math.multiplyExact(route.distanceMeters / 1_000L, catalog.vehicles.maxOf { it.fuelCentsPerKilometer }))
-        val rental = Money(catalog.economy.rentalCentsPerJob)
-        val penalty = (base + distance + riskBonus).percentage(catalog.economy.maximumPenaltyBasisPoints)
-        return JobInvoice(base, distance, riskBonus, fuel, rental, penalty)
+        val fuel = Money(Math.multiplyExact(route.distanceMeters / 1_000L, vehicle.fuelCentsPerKilometer))
+        val rental = if (ownership == Ownership.RENTAL) Money(catalog.economy.rentalCentsPerJob) else Money.ZERO
+        val penaltyBasisPoints = minOf(risk.penaltyBasisPoints, catalog.economy.maximumPenaltyBasisPoints)
+        val penalty = (base + distance + riskBonus).percentage(penaltyBasisPoints)
+        val workedDays = workedGameDays(startAt, completionAt)
+        val upkeep = vehicle.dailyUpkeep * (workedDays - chargedUpkeepDays).size.toLong()
+        val wage = driverTier?.dailyWage?.times((workedDays - chargedWageDays).size.toLong()) ?: Money.ZERO
+        return JobInvoice(base, distance, riskBonus, fuel, rental, penalty, upkeep, wage, penaltyBasisPoints)
+    }
+
+    private fun workedGameDays(start: GameInstant, completion: GameInstant): Set<Int> {
+        val first = Math.toIntExact(start.millis / DAY_MILLIS + 1L)
+        val lastInstant = maxOf(start.millis, completion.millis - 1L)
+        val last = Math.toIntExact(lastInstant / DAY_MILLIS + 1L)
+        return (first..last).toSet()
     }
 
     private fun summarizeDay(state: GameState, day: Int): DailySummary {
         val start = (day - 1L) * DAY_MILLIS
         val end = day.toLong() * DAY_MILLIS
         val entries = state.ledger.filter { it.at.millis in start until end }
-        val revenue = entries.filter { it.amount.cents > 0 }.fold(Money.ZERO) { sum, it -> sum + it.amount }
-        val costs = entries.filter { it.amount.cents < 0 }.fold(Money.ZERO) { sum, it -> sum + Money(-it.amount.cents) }
+        val revenue = entries.filter { it.type == LedgerType.REVENUE }.fold(Money.ZERO) { sum, it -> sum + it.amount }
+        val costTypes = setOf(LedgerType.PENALTY, LedgerType.FUEL, LedgerType.RENTAL, LedgerType.VEHICLE_UPKEEP, LedgerType.REPAIR, LedgerType.MAINTENANCE, LedgerType.DRIVER_WAGE, LedgerType.DRIVER_SEVERANCE)
+        val costs = entries.filter { it.type in costTypes }.fold(Money.ZERO) { sum, it -> sum + Money(-it.amount.cents) }
         return DailySummary(day, state.completedJobs.count { it.completedAt.millis in start until end }, revenue, costs)
     }
 
