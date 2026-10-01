@@ -37,6 +37,7 @@ sealed interface StoreEvent {
 sealed interface StoreOpenResult {
     data class Ready(val state: GameState) : StoreOpenResult
     data class RecoveryRequired(val recoveredState: GameState?, val primaryResult: SaveDecodeResult) : StoreOpenResult
+    data class PersistenceFailed(val message: String) : StoreOpenResult
     data object Missing : StoreOpenResult
 }
 
@@ -59,24 +60,40 @@ class GameStore(
     private val mutableState = MutableStateFlow(initialState)
     private val mutableEvents = MutableSharedFlow<StoreEvent>(extraBufferCapacity = 16)
     private var recoveryCandidate: GameState? = null
-    private var protectedPrimary = false
+    private var protectedPrimary = true
 
     val state: StateFlow<GameState> = mutableState.asStateFlow()
     val events: SharedFlow<StoreEvent> = mutableEvents.asSharedFlow()
 
     suspend fun open(): StoreOpenResult = mutex.withLock {
-        val candidates = repository.readCandidates()
         recoveryCandidate = null
-        protectedPrimary = false
+        protectedPrimary = true
+        val candidates = try {
+            repository.readCandidates()
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            val message = exception.message ?: "Unable to read saved game"
+            mutableEvents.tryEmit(StoreEvent.PersistenceFailed(message))
+            return@withLock StoreOpenResult.PersistenceFailed(message)
+        }
         val primary = codec.decode(candidates.primary)
         when (primary) {
             is SaveDecodeResult.Success -> {
+                protectedPrimary = false
                 mutableState.value = primary.state
                 StoreOpenResult.Ready(primary.state)
             }
             SaveDecodeResult.Missing -> {
                 val backup = codec.decode(candidates.lastKnownGood)
-                if (backup is SaveDecodeResult.Success) requireRecovery(primary, backup.state) else StoreOpenResult.Missing
+                when (backup) {
+                    is SaveDecodeResult.Success -> requireRecovery(primary, backup.state)
+                    SaveDecodeResult.Missing -> {
+                        protectedPrimary = false
+                        StoreOpenResult.Missing
+                    }
+                    is SaveDecodeResult.Corrupt, is SaveDecodeResult.FutureVersion -> requireRecovery(backup, null)
+                }
             }
             is SaveDecodeResult.Corrupt, is SaveDecodeResult.FutureVersion -> {
                 val backup = codec.decode(candidates.lastKnownGood)

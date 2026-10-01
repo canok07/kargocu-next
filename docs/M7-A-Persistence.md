@@ -21,11 +21,13 @@ Decode is bounded to 2 MiB by default. It rejects malformed UTF-8/JSON, missing 
 
 `GameStore` accepts the `GameCatalog` used for post-reduce validation. Callers using a non-default catalog must inject the same catalog into `GameEngine`, `SaveCodec`, and `GameStore`.
 
+Commands are blocked until `open()` has safely read the save candidates. Read failures return `StoreOpenResult.PersistenceFailed` and keep writes blocked. A corrupt or future backup is also protected when the primary is missing.
+
 Corrupt or future primary saves enable recovery protection. Recovery is explicit: the repository must preserve the original primary before a recovered candidate can replace it. A successful reopen clears obsolete recovery protection.
 
 ## Verification
 
-`./gradlew -PgameOnly=true :game:test` passes 55 tests: the existing 37 pure engine tests and 18 persistence tests.
+The M7-A CC checkpoint passed 55 tests: the existing 37 pure engine tests and 18 persistence tests. Windows review added three startup safety regressions; all three failed before the fix and the complete suite passed 58 tests after the fix using `./gradlew -PgameOnly=true :game:test`.
 
 ## Not included
 

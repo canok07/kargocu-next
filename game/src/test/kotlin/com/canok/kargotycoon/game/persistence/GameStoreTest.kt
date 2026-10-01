@@ -32,6 +32,7 @@ class GameStoreTest {
         val initial = newGame(seed = 2).copy(revision = 2)
         val repository = FakeRepository(codec.encode(initial), forcedPersistedRevision = 10)
         val store = GameStore(engine, codec, repository, initial)
+        store.open()
         val result = store.dispatch(GameCommand.GenerateDailyOffers(CommandId("offers")))
         assertEquals(StoreCommandResult.StaleWrite(initial, 3, 10), result)
         assertEquals(initial, store.state.value)
@@ -43,6 +44,7 @@ class GameStoreTest {
         val initial = newGame(seed = 3)
         val repository = FakeRepository(codec.encode(initial))
         val store = GameStore(engine, codec, repository, initial)
+        store.open()
         val results = listOf(
             async { store.dispatch(GameCommand.GenerateDailyOffers(CommandId("offers"))) },
             async { store.dispatch(GameCommand.RefreshProgression(CommandId("progress"))) },
@@ -89,6 +91,7 @@ class GameStoreTest {
         val initial = newGame(seed = 6)
         val repository = FakeRepository(codec.encode(initial), throwWrites = true)
         val store = GameStore(engine, codec, repository, initial)
+        store.open()
         val result = store.dispatch(GameCommand.GenerateDailyOffers(CommandId("offers")))
         assertTrue(result is StoreCommandResult.PersistenceFailed)
         assertEquals(initial, store.state.value)
@@ -99,6 +102,7 @@ class GameStoreTest {
     fun cancellationFromRepositoryWritePropagates() = runTest {
         val initial = newGame(seed = 7)
         val store = GameStore(engine, codec, FakeRepository(codec.encode(initial), cancelWrites = true), initial)
+        store.open()
         try {
             store.dispatch(GameCommand.GenerateDailyOffers(CommandId("offers")))
             fail("Expected cancellation")
@@ -126,6 +130,7 @@ class GameStoreTest {
         val initial = newGame(catalog, seed = 9)
         val repository = FakeRepository(customCodec.encode(initial))
         val store = GameStore(customEngine, customCodec, repository, initial, catalog)
+        store.open()
         assertTrue(store.dispatch(GameCommand.GenerateDailyOffers(CommandId("offers"))) is StoreCommandResult.Applied)
     }
 
