@@ -39,6 +39,7 @@ class SessionController(
     private var store: GameStore? = null
     private var started = false
     @Volatile private var foreground = false
+    @Volatile private var persistencePaused = false
     val state = mutableState.asStateFlow()
 
     fun start() {
@@ -48,14 +49,14 @@ class SessionController(
         scope.launch {
             while (isActive) {
                 delay(1_000)
-                if (foreground && state.value.mode == SessionMode.PLAYING) dispatch(GameCommand.Resume(id(), clock()))
+                if (foreground && !persistencePaused && state.value.mode == SessionMode.PLAYING) dispatch(GameCommand.Resume(id(), clock()))
             }
         }
     }
 
     fun setForeground(value: Boolean) {
         foreground = value
-        if (state.value.mode == SessionMode.PLAYING) enqueue(GameCommand.Resume(id(), clock()))
+        if (!persistencePaused && state.value.mode == SessionMode.PLAYING) enqueue(GameCommand.Resume(id(), clock()))
     }
 
     fun enqueue(command: GameCommand) { scope.launch { dispatch(command) } }
@@ -71,9 +72,10 @@ class SessionController(
         val result = current.open()
         when (result) {
             is StoreOpenResult.Ready -> {
+                persistencePaused = false
                 mutableState.value = SessionState(SessionMode.PLAYING, result.state)
                 publish(current.dispatch(GameCommand.Resume(id(), clock())))
-                publish(current.dispatch(GameCommand.GenerateDailyOffers(id())))
+                if (!persistencePaused) publish(current.dispatch(GameCommand.GenerateDailyOffers(id())))
             }
             StoreOpenResult.Missing -> mutableState.value = SessionState(SessionMode.WELCOME)
             is StoreOpenResult.RecoveryRequired -> mutableState.value = SessionState(
@@ -95,8 +97,9 @@ class SessionController(
             store = current
             when (current.open()) {
                 is StoreOpenResult.Ready -> {
+                    persistencePaused = false
                     mutableState.value = SessionState(SessionMode.PLAYING, current.state.value)
-                    publish(current.dispatch(GameCommand.GenerateDailyOffers(id())))
+                    if (!persistencePaused) publish(current.dispatch(GameCommand.GenerateDailyOffers(id())))
                 }
                 else -> mutableState.value = SessionState(SessionMode.READ_ERROR)
             }
@@ -107,9 +110,10 @@ class SessionController(
     suspend fun confirmRecovery(): StoreCommandResult = operations.withLock {
         val result = store?.confirmRecovery() ?: StoreCommandResult.RecoveryConfirmationRequired
         if (result is StoreCommandResult.Applied) {
+            persistencePaused = false
             mutableState.value = SessionState(SessionMode.PLAYING, result.state)
             publish(store!!.dispatch(GameCommand.Resume(id(), clock())))
-            publish(store!!.dispatch(GameCommand.GenerateDailyOffers(id())))
+            if (!persistencePaused) publish(store!!.dispatch(GameCommand.GenerateDailyOffers(id())))
         } else notify(Notice.SAVING_FAILED)
         result
     }
@@ -138,11 +142,15 @@ class SessionController(
     private fun publish(result: StoreCommandResult) {
         when (result) {
             is StoreCommandResult.Applied -> {
+                persistencePaused = false
                 mutableState.update { it.copy(game = result.state) }
                 if (result.events.any { it is GameEvent.JobCompleted }) notify(Notice.DELIVERY_FINISHED)
             }
             is StoreCommandResult.Rejected -> notify(noticeFor(result.reason))
-            is StoreCommandResult.PersistenceFailed, is StoreCommandResult.StaleWrite -> notify(Notice.SAVING_FAILED)
+            is StoreCommandResult.PersistenceFailed, is StoreCommandResult.StaleWrite -> {
+                persistencePaused = true
+                notify(Notice.SAVING_FAILED)
+            }
             StoreCommandResult.RecoveryConfirmationRequired -> notify(Notice.INVALID_ACTION)
         }
     }

@@ -3,11 +3,18 @@ package com.canok.kargotycoon
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.canok.kargotycoon.data.SessionController
+import com.canok.kargotycoon.data.Notice
 import com.canok.kargotycoon.data.SessionMode
 import com.canok.kargotycoon.game.domain.*
 import com.canok.kargotycoon.game.engine.*
 import com.canok.kargotycoon.game.persistence.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import java.util.concurrent.atomic.AtomicLong
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,6 +23,39 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class SessionPersistenceTest {
+    @Test fun failedSaveStopsAutomaticRetriesUntilExplicitReopen() = runBlocking {
+        val directory = directory()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val clock = AtomicLong(7_000)
+        try {
+            val session = SessionController(directory, clock = clock::get, scope = scope)
+            assertEquals(SaveWriteResult.Written, session.startNewGame(seed = 9))
+            session.start()
+            delay(300)
+            session.setForeground(true)
+            delay(300)
+            val before = session.state.value.game!!
+            // AtomicFile cannot replace a nonempty directory with its temporary file.
+            val blocked = File(directory, "game.json.new").also { check(it.mkdir()) }
+            File(blocked, "obstruction").writeText("test-only")
+            assertTrue(session.dispatch(GameCommand.AdvanceDay(SessionController.id())) is StoreCommandResult.PersistenceFailed)
+            val failure = session.state.value
+            assertEquals(Notice.SAVING_FAILED, failure.notice)
+            delay(2_200)
+            assertEquals(failure.noticeSequence, session.state.value.noticeSequence)
+            assertEquals(before.gameDay, session.state.value.game!!.gameDay)
+            assertTrue(blocked.deleteRecursively())
+            assertTrue(session.reopen() is StoreOpenResult.Ready)
+            assertNull(session.state.value.notice)
+            clock.addAndGet(60_000)
+            delay(1_200)
+            assertTrue(session.state.value.game!!.gameTime.millis > before.gameTime.millis)
+        } finally {
+            scope.cancel()
+            directory.deleteRecursively()
+        }
+    }
+
     @Test fun inFlightDeliveryReopensAndCannotPayTwice() = runBlocking {
         val directory = directory()
         try {

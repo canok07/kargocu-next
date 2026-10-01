@@ -5,6 +5,8 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -142,6 +144,9 @@ class AppUiTest {
     @Test
     fun buysHiresAndAssignsUsingOnlyRealEngineCommands() {
         earnUntil(targetCents = 130_000L, minimumJobs = 4, minimumDay = 2)
+        // The last completion snackbar can cover the lowest vehicle action.
+        // Wait for its normal dismissal before interacting with that action.
+        compose.waitUntil(timeoutMillis = 15_000) { session.state.value.notice == null }
 
         compose.onNodeWithTag(TestTags.NAV_FLEET).performClick()
         waitForTag(TestTags.FLEET_ROOT)
@@ -168,7 +173,9 @@ class AppUiTest {
         compose.onNodeWithTag(TestTags.vehicle(owned.id.value)).performScrollTo().performClick()
         waitForTag(TestTags.VEHICLE_ROOT)
         compose.onNodeWithTag(TestTags.VEHICLE_ASSIGN_DRIVER).performScrollTo().performClick()
-        waitForTag(TestTags.driver(driverId))
+        try { waitForTag(TestTags.driver(driverId)) } catch (failure: Throwable) {
+            throw AssertionError("Assignment screen: drivers=${game().drivers}; tree=${compose.onRoot().printToString()}", failure)
+        }
         compose.onNodeWithTag(TestTags.driver(driverId)).performClick()
         compose.waitUntil(timeoutMillis = 15_000) {
             game().vehicles.first { it.id == owned.id }.assignedDriverId != null

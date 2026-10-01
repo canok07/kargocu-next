@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -72,6 +73,7 @@ fun KargoApp(viewModel: GameViewModel = viewModel()) {
 
     AppLocale(language) {
         KargoTheme {
+            Box(Modifier.fillMaxSize()) {
             when (sessionState.mode) {
                 SessionMode.LOADING -> LaunchScreen()
                 SessionMode.WELCOME -> WelcomeScreen(
@@ -89,8 +91,15 @@ fun KargoApp(viewModel: GameViewModel = viewModel()) {
                 )
                 SessionMode.READ_ERROR -> ReadErrorScreen(onRetry = { viewModel.retryOpen() })
                 SessionMode.PLAYING -> sessionState.game?.let { game ->
-                    PlayingScaffold(viewModel, game, sessionState.notice, sessionState.noticeSequence)
+                    PlayingScaffold(viewModel, game)
                 } ?: LaunchScreen()
+            }
+                SessionNotices(
+                    viewModel, sessionState.notice, sessionState.noticeSequence,
+                    Modifier.align(Alignment.BottomCenter).padding(
+                        bottom = if (sessionState.mode == SessionMode.PLAYING) 88.dp else 24.dp,
+                    ),
+                )
             }
         }
     }
@@ -116,32 +125,34 @@ private fun ForegroundLifecycle() {
 }
 
 @Composable
-private fun PlayingScaffold(viewModel: GameViewModel, game: GameState, notice: Notice?, noticeSequence: Long) {
-    val stack = rememberSaveable(saver = BackStackSaver) { androidx.compose.runtime.mutableStateListOf(Route.Dashboard) }
-    val navigator = remember(stack) { Navigator(stack) }
+private fun SessionNotices(viewModel: GameViewModel, notice: Notice?, noticeSequence: Long, modifier: Modifier) {
     val snackbarHostState = remember { SnackbarHostState() }
     val noticeMessage = notice?.let { noticeText(it) }
     val retryLabel = stringResource(R.string.action_retry)
-    val feedback = com.canok.kargotycoon.ui.feedback.rememberKargoFeedback(game.settings.soundEnabled, game.settings.hapticsEnabled)
-
-    BackHandler(enabled = navigator.canGoBack) { navigator.back() }
-
     LaunchedEffect(noticeSequence, noticeMessage) {
         if (noticeMessage == null) return@LaunchedEffect
         val result = snackbarHostState.showSnackbar(
             message = noticeMessage,
             actionLabel = if (notice == Notice.SAVING_FAILED) retryLabel else null,
-            withDismissAction = true,
+            withDismissAction = notice != Notice.SAVING_FAILED,
             duration = if (notice == Notice.SAVING_FAILED) SnackbarDuration.Indefinite else SnackbarDuration.Short,
         )
         viewModel.clearNotice()
         if (result == SnackbarResult.ActionPerformed && notice == Notice.SAVING_FAILED) viewModel.retryOpen()
     }
+    SnackbarHost(snackbarHostState, modifier)
+}
+
+@Composable
+private fun PlayingScaffold(viewModel: GameViewModel, game: GameState) {
+    val stack = rememberSaveable(saver = BackStackSaver) { androidx.compose.runtime.mutableStateListOf(Route.Dashboard) }
+    val navigator = remember(stack) { Navigator(stack) }
+    val feedback = com.canok.kargotycoon.ui.feedback.rememberKargoFeedback(game.settings.soundEnabled, game.settings.hapticsEnabled)
+    BackHandler(enabled = navigator.canGoBack) { navigator.back() }
 
     Scaffold(
         topBar = { KargoTopBar(title = routeTitle(navigator.current), canGoBack = navigator.canGoBack, onBack = { navigator.back() }) },
         bottomBar = { KargoBottomBar(navigator.current) { navigator.selectTab(it) } },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { inner ->
         androidx.compose.runtime.CompositionLocalProvider(
