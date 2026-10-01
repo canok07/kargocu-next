@@ -1,6 +1,8 @@
 package com.canok.kargotycoon.game.engine
 
 import com.canok.kargotycoon.game.domain.*
+import com.canok.kargotycoon.game.persistence.SaveCodec
+import com.canok.kargotycoon.game.persistence.SaveDecodeResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -72,16 +74,13 @@ class ParallelAndBalanceTest {
     }
 
     @Test
-    fun seededFourteenAndThirtyDayBalanceReachesPlayableLoop() {
-        val day14 = simulate(days = 14, seed = 20260930)
-        val day30 = simulate(days = 30, seed = 20260930)
-        assertTrue("day14=$day14 day30=$day30", day14.firstOwnedAfterJobs in 8..15)
-        assertTrue("day14=$day14", day14.ownedVehicles >= 1)
-        assertTrue("day14=$day14", day14.drivers >= 1)
-        assertTrue("day14=$day14", day14.parallelStarted)
-        assertTrue(day30.completedJobs > day14.completedJobs)
-        assertTrue(day30.money.cents >= 0)
-        assertFalse(day30.softLocked)
+    fun publicCommandFourteenAndThirtyDayLoopsReachFleetAndParallelPlay() {
+        val seeds = listOf(7L, 99L, 20260930L)
+        val day14 = seeds.map { simulate(days = 14, seed = it) }
+        val day30 = seeds.map { simulate(days = 30, seed = it) }
+        assertTrue("day14=$day14", day14.all { it.ownedVehicles >= 1 && it.drivers >= 1 && it.parallelStarted && it.saveLoaded && !it.softLocked })
+        assertTrue("day30=$day30", day30.all { it.ownedVehicles >= 1 && it.drivers >= 1 && it.parallelStarted && it.saveLoaded && !it.softLocked })
+        assertTrue("day14=$day14 day30=$day30", day30.zip(day14).all { (long, short) -> long.completedJobs > short.completedJobs })
     }
 
     private fun simulate(days: Int, seed: Long): BalanceFinding {
@@ -89,44 +88,52 @@ class ParallelAndBalanceTest {
         var command = 0
         var firstOwnedAfterJobs: Int? = null
         var parallelStarted = false
+        var saveLoaded = false
+        val cityVan = DefaultCatalog.value.vehicles.first { it.id == VehicleSpecId("city-van") }
+        val junior = DefaultCatalog.value.driverTiers.first { it.id == DriverTierId("junior") }
+        val operatingBuffer = Money.euros(100)
         repeat(days) { dayIndex ->
-            repeat(2) {
-                state = applied(engine.reduce(state, GameCommand.GenerateDailyOffers(CommandId("offers-${command++}")))).state
-                val offer = state.offers.map(::feasible).first()
-                val accepted = engine.reduce(state.copy(offers = listOf(offer)), GameCommand.AcceptJob(CommandId("accept-${command++}"), offer.id, VehicleId("vehicle-1"), offer.routeOptions.first(), true))
-                if (accepted is GameResult.Applied) {
-                    state = accepted.state
-                    val job = state.activeJobs.first { it.manualDriving }
-                    state = applied(engine.reduce(state, GameCommand.AdvanceTime(CommandId("finish-${command++}"), job.completionAt.millis - state.gameTime.millis))).state
+            state = applied(engine.reduce(state, GameCommand.GenerateDailyOffers(CommandId("offers-${command++}")))).state
+            while (true) {
+                if (state.vehicles.none { it.ownership == Ownership.OWNED } && state.companyLevel(DefaultCatalog.value) >= cityVan.minimumCompanyLevel && state.money >= cityVan.purchasePrice + operatingBuffer) {
+                    firstOwnedAfterJobs = state.progression.completedJobs
+                    state = applied(engine.reduce(state, GameCommand.PurchaseVehicle(CommandId("buy-${command++}"), cityVan.id))).state
                 }
-            }
-            val firstVehicle = DefaultCatalog.value.vehicles.first { it.id == VehicleSpecId("city-van") }
-            val purchaseBuffer = Money.euros(100)
-            if (state.vehicles.none { it.ownership == Ownership.OWNED } && state.companyLevel(DefaultCatalog.value) >= 2 && state.money >= firstVehicle.purchasePrice + purchaseBuffer) {
-                firstOwnedAfterJobs = state.progression.completedJobs
-                state = applied(engine.reduce(state, GameCommand.PurchaseVehicle(CommandId("buy-${command++}"), firstVehicle.id))).state
-            }
-            if (state.vehicles.any { it.ownership == Ownership.OWNED } && state.drivers.isEmpty() && state.money >= Money(22_000)) {
-                state = applied(engine.reduce(state, GameCommand.HireDriver(CommandId("hire-${command++}"), DriverTierId("junior"), "Mina"))).state
-                val owned = state.vehicles.first { it.ownership == Ownership.OWNED }
-                state = applied(engine.reduce(state, GameCommand.AssignDriver(CommandId("assign-${command++}"), state.drivers.single().id, owned.id))).state
-            }
-            if (!parallelStarted && state.drivers.isNotEmpty()) {
-                state = applied(engine.reduce(state, GameCommand.GenerateDailyOffers(CommandId("parallel-offers-${command++}")))).state
-                val offers = state.offers.take(2).map(::feasible).mapIndexed { index, offer -> offer.copy(id = OfferId("parallel-$dayIndex-$index")) }
-                state = applied(engine.reduce(state.copy(offers = offers), GameCommand.AcceptJob(CommandId("manual-${command++}"), offers[0].id, VehicleId("vehicle-1"), offers[0].routeOptions.first(), true))).state
-                val owned = state.vehicles.first { it.ownership == Ownership.OWNED }
-                val second = engine.reduce(state, GameCommand.AcceptJob(CommandId("hired-${command++}"), offers[1].id, owned.id, offers[1].routeOptions.first(), false))
-                if (second is GameResult.Applied) {
-                    state = second.state
-                    parallelStarted = true
-                    val delta = state.activeJobs.maxOf { it.completionAt.millis } - state.gameTime.millis
-                    state = applied(engine.reduce(state, GameCommand.AdvanceTime(CommandId("parallel-finish-${command++}"), delta))).state
+                if (state.vehicles.any { it.ownership == Ownership.OWNED } && state.drivers.isEmpty() && state.companyLevel(DefaultCatalog.value) >= junior.minimumCompanyLevel && state.money >= junior.hiringCost + operatingBuffer) {
+                    state = applied(engine.reduce(state, GameCommand.HireDriver(CommandId("hire-${command++}"), junior.id, "Mina"))).state
+                    val owned = state.vehicles.first { it.ownership == Ownership.OWNED }
+                    state = applied(engine.reduce(state, GameCommand.AssignDriver(CommandId("assign-${command++}"), state.drivers.single().id, owned.id))).state
                 }
+                val manual = acceptFirstAvailable(state, VehicleId("vehicle-1"), manual = true, command = command++) ?: break
+                state = manual
+                if (!parallelStarted && state.drivers.isNotEmpty()) {
+                    val owned = state.vehicles.first { it.ownership == Ownership.OWNED }
+                    val hired = acceptFirstAvailable(state, owned.id, manual = false, command = command++)
+                    if (hired != null) {
+                        state = hired
+                        parallelStarted = state.activeJobs.size == 2
+                    }
+                }
+                val delta = state.activeJobs.maxOf { it.completionAt.millis } - state.gameTime.millis
+                state = applied(engine.reduce(state, GameCommand.AdvanceTime(CommandId("finish-${command++}"), delta))).state
+            }
+            if (!saveLoaded && dayIndex >= 6) {
+                state = (SaveCodec().decode(SaveCodec().encode(state)) as SaveDecodeResult.Success).state
+                saveLoaded = true
             }
             state = applied(engine.reduce(state, GameCommand.AdvanceDay(CommandId("day-${command++}")))).state
         }
-        return BalanceFinding(state.progression.completedJobs, state.money, firstOwnedAfterJobs ?: Int.MAX_VALUE, state.vehicles.count { it.ownership == Ownership.OWNED }, state.drivers.size, parallelStarted, state.money.cents < 0 && state.activeJobs.isEmpty())
+        return BalanceFinding(state.progression.completedJobs, state.money, firstOwnedAfterJobs ?: Int.MAX_VALUE, state.vehicles.count { it.ownership == Ownership.OWNED }, state.drivers.size, parallelStarted, saveLoaded, state.money.cents < 0 && state.activeJobs.isEmpty())
+    }
+
+    private fun acceptFirstAvailable(state: GameState, vehicleId: VehicleId, manual: Boolean, command: Int): GameState? {
+        state.offers.forEachIndexed { index, offer ->
+            offer.routeOptions.forEach { routeId ->
+                val result = engine.reduce(state, GameCommand.AcceptJob(CommandId("accept-$command-$index-${routeId.value}"), offer.id, vehicleId, routeId, manual))
+                if (result is GameResult.Applied) return result.state
+            }
+        }
+        return null
     }
 
     private fun threeActiveJobs(): GameState {
@@ -144,6 +151,6 @@ class ParallelAndBalanceTest {
     }
 
     private fun feasible(offer: JobOffer): JobOffer = offer.copy(packageTypeId = PackageTypeId("parcel"), count = 1, totalWeightGrams = 2_000, requiredCapabilities = emptySet(), riskId = RiskId("calm"))
-    private fun applied(result: GameResult): GameResult.Applied = result as GameResult.Applied
-    private data class BalanceFinding(val completedJobs: Int, val money: Money, val firstOwnedAfterJobs: Int, val ownedVehicles: Int, val drivers: Int, val parallelStarted: Boolean, val softLocked: Boolean)
+    private fun applied(result: GameResult): GameResult.Applied = result as? GameResult.Applied ?: error("Unexpected rejection: $result")
+    private data class BalanceFinding(val completedJobs: Int, val money: Money, val firstOwnedAfterJobs: Int, val ownedVehicles: Int, val drivers: Int, val parallelStarted: Boolean, val saveLoaded: Boolean, val softLocked: Boolean)
 }

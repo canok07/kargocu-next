@@ -73,10 +73,10 @@ class DriverManagementTest {
         val offer = feasibleOffer(ready)
         val accepted = applied(engine.reduce(ready.copy(offers = listOf(offer)), GameCommand.AcceptJob(CommandId("accept"), offer.id, VehicleId("vehicle-2"), offer.routeOptions.first(), manualDriving = false))).state
         val job = accepted.activeJobs.single()
-        val completed = applied(engine.reduce(accepted, GameCommand.AdvanceTime(CommandId("finish"), job.completionAt.millis))).state
+        val completed = applied(engine.reduce(accepted, GameCommand.AdvanceTime(CommandId("finish"), job.completionAt.millis - accepted.gameTime.millis))).state
         val driver = completed.drivers.single()
         assertEquals(1, driver.experienceJobs)
-        assertEquals(setOf(1), driver.wageChargedGameDays)
+        assertEquals(setOf(4), driver.wageChargedGameDays)
         assertEquals(1, completed.ledger.count { it.type == LedgerType.DRIVER_WAGE })
         val later = applied(engine.reduce(completed, GameCommand.AdvanceTime(CommandId("later"), 1))).state
         assertEquals(1, later.ledger.count { it.type == LedgerType.DRIVER_WAGE })
@@ -93,7 +93,7 @@ class DriverManagementTest {
         assertEquals(1, parallel.activeJobs.count { it.driverId != null })
     }
 
-    private fun eligible(): GameState = newGame(seed = 20).copy(gameDay = 4, progression = ProgressionState(completedJobs = 8))
+    private fun eligible(): GameState = newGame(seed = 20).copy(gameTime = GameInstant(3 * GameEngine.DAY_MILLIS), gameDay = 4, progression = ProgressionState(completedJobs = 8))
 
     private fun hiredAssigned(): GameState {
         val owned = VehicleState(VehicleId("vehicle-2"), VehicleSpecId("city-van"), Ownership.OWNED, assignedDriverId = DriverId("driver-3"))
@@ -110,5 +110,5 @@ class DriverManagementTest {
         return listOf(first, first.copy(id = OfferId("offer-second")))
     }
 
-    private fun applied(result: GameResult): GameResult.Applied = result as GameResult.Applied
+    private fun applied(result: GameResult): GameResult.Applied = result as? GameResult.Applied ?: error("Unexpected rejection: $result")
 }

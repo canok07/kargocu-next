@@ -14,6 +14,7 @@ data class VehicleState(
     val totalOperatingCosts: Money = Money.ZERO,
     val totalEarned: Money = Money.ZERO,
     val assignedDriverId: DriverId? = null,
+    val upkeepChargedGameDays: Set<Int> = emptySet(),
 )
 
 @Serializable
@@ -35,8 +36,11 @@ data class JobInvoice(
     val reservedFuel: Money,
     val reservedRental: Money,
     val reservedPenalty: Money,
+    val reservedUpkeep: Money = Money.ZERO,
+    val reservedDriverWage: Money = Money.ZERO,
+    val penaltyBasisPoints: Int = 0,
 ) {
-    val maximumReservation: Money get() = reservedFuel + reservedRental + reservedPenalty
+    val maximumReservation: Money get() = reservedFuel + reservedRental + reservedPenalty + reservedUpkeep + reservedDriverWage
     val maximumRevenue: Money get() = baseReward + distanceReward + riskBonus
 }
 
@@ -138,6 +142,7 @@ data class GameState(
     val nextEntitySequence: Long = 1,
     val randomSeed: Long,
     val randomCounter: Long = 0,
+    val offersGeneratedGameDay: Int? = null,
     val vehicles: List<VehicleState>,
     val drivers: List<DriverState> = emptyList(),
     val offers: List<JobOffer> = emptyList(),
