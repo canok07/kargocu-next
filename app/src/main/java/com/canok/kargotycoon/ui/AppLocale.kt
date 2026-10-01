@@ -15,9 +15,10 @@ import java.util.Locale
 @Composable
 fun AppLocale(languageTag: String, content: @Composable () -> Unit) {
     val context = LocalContext.current
-    val configuration = remember(languageTag) {
+    val baseConfiguration = LocalConfiguration.current
+    val configuration = remember(languageTag, baseConfiguration) {
         val locale = Locale.forLanguageTag(languageTag)
-        Configuration(context.resources.configuration).apply {
+        Configuration(baseConfiguration).apply {
             setLocale(locale)
             setLayoutDirection(locale)
         }
