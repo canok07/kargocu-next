@@ -6,6 +6,7 @@ import com.canok.kargotycoon.game.persistence.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
@@ -61,10 +62,10 @@ class SessionController(
     fun retryOpen() { scope.launch { reopen() } }
     fun newGame() { scope.launch { startNewGame(clock()) } }
     fun recover() { scope.launch { confirmRecovery() } }
-    fun clearNotice() { mutableState.value = mutableState.value.copy(notice = null) }
+    fun clearNotice() { mutableState.update { it.copy(notice = null) } }
 
     suspend fun reopen(): StoreOpenResult = operations.withLock {
-        mutableState.value = mutableState.value.copy(mode = SessionMode.LOADING)
+        mutableState.update { it.copy(mode = SessionMode.LOADING) }
         val current = GameStore(engine, codec, repository, newGame(seed = clock()), catalog)
         store = current
         val result = current.open()
@@ -72,6 +73,7 @@ class SessionController(
             is StoreOpenResult.Ready -> {
                 mutableState.value = SessionState(SessionMode.PLAYING, result.state)
                 publish(current.dispatch(GameCommand.Resume(id(), clock())))
+                publish(current.dispatch(GameCommand.GenerateDailyOffers(id())))
             }
             StoreOpenResult.Missing -> mutableState.value = SessionState(SessionMode.WELCOME)
             is StoreOpenResult.RecoveryRequired -> mutableState.value = SessionState(
@@ -105,6 +107,7 @@ class SessionController(
         if (result is StoreCommandResult.Applied) {
             mutableState.value = SessionState(SessionMode.PLAYING, result.state)
             publish(store!!.dispatch(GameCommand.Resume(id(), clock())))
+            publish(store!!.dispatch(GameCommand.GenerateDailyOffers(id())))
         } else notify(Notice.SAVING_FAILED)
         result
     }
@@ -126,10 +129,14 @@ class SessionController(
         }
     }
 
+    suspend fun previewCommand(command: GameCommand): GameResult? = withContext(Dispatchers.Default) {
+        state.value.game?.let { engine.reduce(it, command) }
+    }
+
     private fun publish(result: StoreCommandResult) {
         when (result) {
             is StoreCommandResult.Applied -> {
-                mutableState.value = mutableState.value.copy(game = result.state)
+                mutableState.update { it.copy(game = result.state) }
                 if (result.events.any { it is GameEvent.JobCompleted }) notify(Notice.DELIVERY_FINISHED)
             }
             is StoreCommandResult.Rejected -> notify(noticeFor(result.reason))
@@ -139,7 +146,7 @@ class SessionController(
     }
 
     private fun notify(notice: Notice) {
-        mutableState.value = mutableState.value.copy(notice = notice, noticeSequence = mutableState.value.noticeSequence + 1)
+        mutableState.update { it.copy(notice = notice, noticeSequence = it.noticeSequence + 1) }
     }
 
     companion object {

@@ -19,6 +19,8 @@ sealed interface GameCommand {
     data class AssignDriver(override val commandId: CommandId, val driverId: DriverId, val vehicleId: VehicleId) : GameCommand
     data class UnassignDriver(override val commandId: CommandId, val driverId: DriverId) : GameCommand
     data class RefreshProgression(override val commandId: CommandId) : GameCommand
+    data class ChangeSettings(override val commandId: CommandId, val settings: GameSettings) : GameCommand
+    data class SetTutorialDismissed(override val commandId: CommandId, val dismissed: Boolean) : GameCommand
 }
 
 sealed interface Rejection {
@@ -46,6 +48,7 @@ sealed interface Rejection {
     data class DriverUnavailable(val driverId: DriverId) : Rejection
     data class StateInvariantViolation(val issues: List<StateIssue>) : Rejection
     data class ArithmeticFailure(val operation: String) : Rejection
+    data object InvalidSettings : Rejection
 }
 
 sealed interface GameEvent {
@@ -108,6 +111,12 @@ class GameEngine(
                 is GameCommand.AssignDriver -> assignDriver(state, command)
                 is GameCommand.UnassignDriver -> unassignDriver(state, command)
                 is GameCommand.RefreshProgression -> GameResult.Applied(markProcessed(unlockRegions(state), command.commandId), emptyList())
+                is GameCommand.ChangeSettings -> if (command.settings.languageTag !in setOf("tr", "en")) {
+                    GameResult.Rejected(state, Rejection.InvalidSettings)
+                } else GameResult.Applied(markProcessed(state.copy(settings = command.settings), command.commandId), emptyList())
+                is GameCommand.SetTutorialDismissed -> GameResult.Applied(
+                    markProcessed(state.copy(tutorial = state.tutorial.copy(dismissed = command.dismissed)), command.commandId), emptyList(),
+                )
             }
             if (result is GameResult.Applied) {
                 val issues = GameStateValidator.validate(result.state, catalog)
