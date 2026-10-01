@@ -60,7 +60,7 @@ class SessionController(
 
     fun enqueue(command: GameCommand) { scope.launch { dispatch(command) } }
     fun retryOpen() { scope.launch { reopen() } }
-    fun newGame() { scope.launch { startNewGame(clock()) } }
+    fun newGame(languageTag: String? = null) { scope.launch { startNewGame(clock(), languageTag) } }
     fun recover() { scope.launch { confirmRecovery() } }
     fun clearNotice() { mutableState.update { it.copy(notice = null) } }
 
@@ -85,8 +85,10 @@ class SessionController(
         result
     }
 
-    suspend fun startNewGame(seed: Long): SaveWriteResult = operations.withLock {
-        val initial = newGame(catalog, seed).copy(lastRealtimeMillis = clock())
+    suspend fun startNewGame(seed: Long, languageTag: String? = null): SaveWriteResult = operations.withLock {
+        val base = com.canok.kargotycoon.game.domain.newGame(catalog, seed).copy(lastRealtimeMillis = clock())
+        val initial = languageTag?.takeIf { it == "tr" || it == "en" }
+            ?.let { base.copy(settings = base.settings.copy(languageTag = it)) } ?: base
         val written = repository.replaceForNewGame(codec.encode(initial))
         if (written == SaveWriteResult.Written) {
             val current = GameStore(engine, codec, repository, initial, catalog)

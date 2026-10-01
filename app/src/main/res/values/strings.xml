@@ -1,8 +1,346 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Kargo Tycoon</string>
+    <string name="company_label">YOUR COMPANY</string>
+
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_jobs">Jobs</string>
+    <string name="nav_fleet">Fleet</string>
+    <string name="nav_team">Team</string>
+    <string name="nav_more">More</string>
+
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_retry">Retry</string>
+
+    <string name="language_tr">Türkçe</string>
+    <string name="language_en">English</string>
+
+    <string name="launch_opening">Opening your saved game…</string>
     <string name="welcome_label">A NEW BEGINNING</string>
     <string name="welcome_title">Build your own logistics network.</string>
     <string name="welcome_description">From your first delivery to a growing fleet.</string>
-    <string name="company_label">YOUR COMPANY</string>
+    <string name="welcome_language">Language</string>
+    <string name="welcome_new_game">Start a new game</string>
+    <string name="welcome_new_game_hint">You begin with 100 EUR and one rental panel van that you drive yourself.</string>
+
+    <string name="recovery_title">Your save needs attention</string>
+    <string name="recovery_body">The saved game could not be read and has been kept safe. Restore the last good copy, or start a new game (existing saves are archived).</string>
+    <string name="recovery_future_body">This save was written by a newer version of the game, so it was left untouched. Restore the last good copy, or start a new game (the newer save is archived).</string>
+    <string name="recovery_restore">Restore last good save</string>
+    <string name="recovery_new_game">Start a new game instead</string>
+    <string name="read_error_title">Storage unavailable</string>
+    <string name="read_error_body">The game could not open local storage. Check that the device has free space, then try again.</string>
+    <string name="read_error_retry">Try again</string>
+
+    <string name="dashboard_balance">Available balance</string>
+    <string name="dashboard_day">Game day</string>
+    <string name="dashboard_stage">Company stage</string>
+    <string name="dashboard_stage_label">Stage</string>
+    <string name="dashboard_stage_value">Stage %1$d</string>
+    <string name="dashboard_time_hint">Time advances on its own: 1 real second = 1 game minute. Leaving the app pauses it.</string>
+    <string name="dashboard_end_day">End the day</string>
+    <string name="end_day_confirm_title">End the day?</string>
+    <string name="end_day_confirm_body">Ongoing deliveries are completed and remaining offers are discarded. Play continues on the next game day.</string>
+    <string name="dashboard_active_title">Active deliveries</string>
+    <string name="dashboard_no_active_title">No delivery in progress</string>
+    <string name="dashboard_no_active_body">Accept a job from the market to get rolling.</string>
+    <string name="dashboard_go_jobs">Job market</string>
+    <string name="dashboard_go_fleet">Open fleet</string>
+    <string name="dashboard_daily_title">Last day summary</string>
+    <string name="dashboard_daily_none">No game day has closed yet.</string>
+    <string name="dashboard_daily_body">Revenue %1$s · Cost %2$s · %3$d jobs</string>
+    <string name="dashboard_last_net_title">Last delivery</string>
+    <string name="dashboard_last_net_value">Net %1$s</string>
+    <string name="dashboard_no_completed">No delivery completed yet.</string>
+    <string name="dashboard_targets_title">Next targets</string>
+    <string name="dashboard_targets_none">All current targets are complete.</string>
+
+    <string name="jobs_tab_offers">Offers</string>
+    <string name="jobs_tab_deliveries">Deliveries</string>
+    <string name="jobs_offer_count">%1$d open</string>
+    <string name="jobs_empty_title">No offers left today</string>
+    <string name="jobs_empty_body">New offers arrive on the next game day. There is no same-day reroll.</string>
+    <string name="jobs_offer_subtitle">%1$s · %2$d × %3$s · %4$s</string>
+    <string name="jobs_active_title">Active</string>
+    <string name="jobs_active_empty">No active delivery.</string>
+    <string name="jobs_history_title">History</string>
+    <string name="jobs_history_empty">No completed delivery yet.</string>
+
+    <string name="job_detail_title">Offer</string>
+    <string name="job_offer_facts">Offer details</string>
+    <string name="offer_route">Route</string>
+    <string name="offer_package">Package</string>
+    <string name="offer_load">Load</string>
+    <string name="offer_count_weight">%1$s × %2$s</string>
+    <string name="offer_risk">Risk</string>
+    <string name="offer_distance">Distance</string>
+    <string name="job_vehicle_title">Choose vehicle</string>
+    <string name="job_vehicle_capacity">%1$s · %2$s</string>
+    <string name="job_no_vehicle_title">No vehicle available</string>
+    <string name="job_no_vehicle_body">All vehicles are busy. Wait for a delivery to finish or end the day.</string>
+    <string name="job_route_title">Route</string>
+    <string name="job_mode_title">Driving</string>
+    <string name="job_mode_manual">I drive myself</string>
+    <string name="job_mode_assigned">Send with driver</string>
+    <string name="job_assigned_unavailable">No driver is assigned to this vehicle.</string>
+    <string name="job_preview_title">Preview</string>
+    <string name="job_preview_none">Calculating preview…</string>
+    <string name="job_preview_payout">Payout</string>
+    <string name="job_preview_reservation">Maximum expense reservation</string>
+    <string name="job_preview_duration">Duration</string>
+    <string name="job_accept">Accept job</string>
+    <string name="job_offer_missing_title">Offer no longer available</string>
+    <string name="job_offer_missing_body">This offer was accepted or expired.</string>
+    <string name="selected">Selected</string>
+    <string name="unknown_vehicle">Unknown vehicle</string>
+    <string name="value_none">—</string>
+    <string name="value_calculating">Calculating…</string>
+
+    <string name="route_line">%1$s → %2$s</string>
+    <string name="active_job_subtitle">%1$s · %2$s</string>
+    <string name="job_manual_driver">You</string>
+    <string name="job_remaining">%1$s left</string>
+    <string name="history_title">Day %1$s · %2$s</string>
+    <string name="history_breakdown">Revenue %1$s · Cost %2$s</string>
+    <string name="history_on_time">On time</string>
+    <string name="history_late">Late</string>
+    <string name="history_risk">Risk occurred</string>
+    <string name="history_no_risk">No risk</string>
+
+    <string name="fleet_purchase_button">Purchase market</string>
+    <string name="fleet_empty_title">No vehicles</string>
+    <string name="fleet_empty_body">Buy a vehicle from the purchase market to grow.</string>
+    <string name="vehicle_detail_title">Vehicle</string>
+    <string name="vehicle_missing_title">Vehicle not found</string>
+    <string name="vehicle_missing_body">This vehicle is no longer in your fleet.</string>
+    <string name="vehicle_ownership">Ownership</string>
+    <string name="vehicle_status">Status</string>
+    <string name="vehicle_capacity">Capacity</string>
+    <string name="vehicle_capacity_value">%1$s · %2$s</string>
+    <string name="vehicle_capabilities">Capabilities</string>
+    <string name="vehicle_condition">Condition</string>
+    <string name="vehicle_mileage">Mileage</string>
+    <string name="vehicle_earned">Total earned</string>
+    <string name="vehicle_costs">Total operating costs</string>
+    <string name="vehicle_driver">Driver</string>
+    <string name="vehicle_actions">Actions</string>
+    <string name="vehicle_repair">Repair</string>
+    <string name="vehicle_maintain">Maintain</string>
+    <string name="vehicle_sell">Sell</string>
+    <string name="vehicle_assign_driver">Assign driver</string>
+    <string name="vehicle_busy_note">This vehicle is busy, so some actions are unavailable.</string>
+    <string name="vehicle_rental_note">Rental vehicles cannot be sold.</string>
+    <string name="repair_confirm_title">Repair vehicle?</string>
+    <string name="repair_confirm_body">A full repair costs %1$s.</string>
+    <string name="maintain_confirm_title">Maintain vehicle?</string>
+    <string name="maintain_confirm_body">Maintenance costs %1$s and improves condition.</string>
+    <string name="sell_confirm_title">Sell vehicle?</string>
+    <string name="sell_confirm_body">You receive %1$s. This cannot be undone.</string>
+
+    <string name="ownership_owned">Owned</string>
+    <string name="ownership_rental">Rental</string>
+    <string name="vehicle_status_available">Available</string>
+    <string name="vehicle_status_busy">Busy</string>
+    <string name="vehicle_status_maintenance">Maintenance</string>
+
+    <string name="purchase_title">Purchase market</string>
+    <string name="purchase_empty_title">Nothing to buy</string>
+    <string name="purchase_empty_body">No vehicle is available in this market.</string>
+    <string name="purchase_ready">Available</string>
+    <string name="purchase_need_funds">Not enough funds</string>
+    <string name="purchase_requires_level">Requires stage %1$d</string>
+    <string name="purchase_confirm_title">Buy this vehicle?</string>
+    <string name="purchase_confirm_body">Buy the %1$s for %2$s.</string>
+    <string name="purchase_action">Buy</string>
+    <string name="purchase_footer">A purchased vehicle is owned by your company. Its daily upkeep and fuel are charged per worked day.</string>
+
+    <string name="team_hire_button">Hire a driver</string>
+    <string name="team_empty_title">No drivers yet</string>
+    <string name="team_empty_body">You can start by driving the first deliveries yourself.</string>
+    <string name="team_driver_jobs">%1$s jobs</string>
+
+    <string name="hire_title">Hire driver</string>
+    <string name="hire_tier_title">Choose a tier</string>
+    <string name="hire_tier_subtitle">Salary %1$s · Hiring %2$s</string>
+    <string name="hire_requires_level">Requires stage %1$d</string>
+    <string name="hire_name_title">Driver name</string>
+    <string name="hire_name_label">Name</string>
+    <string name="hire_name_hint">Enter a name of up to 40 characters.</string>
+    <string name="hire_action">Hire</string>
+
+    <string name="driver_detail_title">Driver</string>
+    <string name="driver_missing_title">Driver not found</string>
+    <string name="driver_missing_body">This driver is no longer on your team.</string>
+    <string name="driver_tier">Tier</string>
+    <string name="driver_status">Status</string>
+    <string name="driver_experience">Experience</string>
+    <string name="driver_vehicle">Vehicle</string>
+    <string name="driver_unassign">Unassign</string>
+    <string name="driver_fire">Fire</string>
+    <string name="driver_busy_note">This driver is on a delivery, so actions are unavailable until it finishes.</string>
+    <string name="fire_confirm_title">Fire this driver?</string>
+    <string name="fire_confirm_body">%1$s leaves the team. Severance costs %2$s.</string>
+
+    <string name="driver_status_available">Available</string>
+    <string name="driver_status_driving">Driving</string>
+    <string name="driver_status_unavailable">Unavailable</string>
+
+    <string name="assign_title">Assign driver</string>
+    <string name="assign_empty_title">No driver available</string>
+    <string name="assign_empty_body">Hire a driver first, or wait until an existing driver is free.</string>
+    <string name="assign_note">A driver can be assigned to one vehicle only.</string>
+
+    <string name="tier_junior">Junior</string>
+    <string name="tier_profi">Professional</string>
+
+    <string name="map_title">Map</string>
+    <string name="map_hint">Tap a node or a region label to inspect that region.</string>
+    <string name="map_legend_active">Active route</string>
+    <string name="map_legend_locked">Locked region</string>
+    <string name="map_region_status">Status</string>
+    <string name="map_region_unlocked">Unlocked</string>
+    <string name="map_region_locked">Locked</string>
+    <string name="map_select_hint">Select a region to see its conditions.</string>
+    <string name="map_condition_jobs">Completed jobs</string>
+    <string name="map_condition_vehicles">Owned vehicles</string>
+    <string name="map_condition_day">Game day</string>
+
+    <string name="region_ruhr">Ruhr Area</string>
+    <string name="region_rhein_main">Rhine-Main</string>
+    <string name="region_elbe">Elbe Corridor</string>
+
+    <string name="location_essen_hub">Essen Depot</string>
+    <string name="location_dortmund_market">Dortmund Market</string>
+    <string name="location_frankfurt_terminal">Frankfurt Terminal</string>
+    <string name="location_mainz_quay">Mainz Quay</string>
+    <string name="location_hamburg_port">Hamburg Port</string>
+    <string name="location_leipzig_yard">Leipzig Yard</string>
+
+    <string name="company_title">Company</string>
+    <string name="company_completed">Completed jobs</string>
+    <string name="company_on_time">On-time jobs</string>
+    <string name="company_owned">Owned vehicles</string>
+    <string name="company_employees">Employees</string>
+    <string name="company_regions">Unlocked regions</string>
+    <string name="company_regions_value">%1$d / %2$d</string>
+    <string name="company_next_stage">Next stage</string>
+    <string name="company_next_stage_name">Stage %1$d requirements</string>
+    <string name="company_max_stage">You have reached the highest stage.</string>
+    <string name="company_requirement_jobs">Completed jobs</string>
+    <string name="company_requirement_vehicles">Owned vehicles</string>
+    <string name="company_requirement_drivers">Drivers</string>
+    <string name="company_requirement_day">Game day</string>
+    <string name="company_regions_title">Regions</string>
+
+    <string name="more_title">More</string>
+    <string name="more_map_subtitle">Schematic network and region gates</string>
+    <string name="more_company_subtitle">Stage, fleet and region progress</string>
+    <string name="more_settings_subtitle">Language, feedback and data</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_feedback">Feedback</string>
+    <string name="settings_sound">Sound</string>
+    <string name="settings_sound_hint">Short confirmation tone for actions.</string>
+    <string name="settings_haptics">Haptics</string>
+    <string name="settings_haptics_hint">Taps and confirmations vibrate lightly.</string>
+    <string name="settings_tutorial_section">Tutorial</string>
+    <string name="settings_tutorial_show">Show tutorial guidance</string>
+    <string name="settings_tutorial_hint">Turn the step-by-step guidance back on.</string>
+    <string name="settings_data">Data</string>
+    <string name="settings_storage_note">Your game is stored only on this device. There is no account or cloud sync.</string>
+    <string name="settings_reset">Start a new game</string>
+    <string name="reset_confirm_title">Start over?</string>
+    <string name="reset_confirm_body">This replaces the current game. Existing saves are archived on the device before they are replaced.</string>
+    <string name="reset_confirm_action">Start over</string>
+
+    <string name="tutorial_dismiss">Hide</string>
+    <string name="tutorial_accept_title">Take your first job</string>
+    <string name="tutorial_accept_body">Open the job market and pick a suitable offer. Drive it yourself if you have no driver yet.</string>
+    <string name="tutorial_accept_action">Open job market</string>
+    <string name="tutorial_complete_title">Finish the delivery</string>
+    <string name="tutorial_complete_body">Time advances on its own. Wait for the route to finish, or end the day.</string>
+    <string name="tutorial_complete_action">Go to dashboard</string>
+    <string name="tutorial_buy_title">Buy your first vehicle</string>
+    <string name="tutorial_buy_body">In Fleet, choose a vehicle for your company from the purchase market.</string>
+    <string name="tutorial_buy_action">Open fleet</string>
+    <string name="tutorial_hire_title">Hire a driver</string>
+    <string name="tutorial_hire_body">In Team, hire a driver and assign them to a vehicle.</string>
+    <string name="tutorial_hire_action">Open team</string>
+    <string name="tutorial_parallel_title">Run parallel deliveries</string>
+    <string name="tutorial_parallel_body">Send a second vehicle on a job so two deliveries run at once.</string>
+    <string name="tutorial_parallel_action">Open jobs</string>
+
+    <string name="package_parcel">Parcel</string>
+    <string name="package_glass">Glassware</string>
+    <string name="package_fresh">Fresh goods</string>
+    <string name="package_chemical">Lab supplies</string>
+
+    <string name="risk_calm">Calm route</string>
+    <string name="risk_rush">Rush hour</string>
+
+    <string name="capability_refrigerated">Refrigerated</string>
+    <string name="capability_fragile">Fragile</string>
+    <string name="capability_hazardous">Hazardous</string>
+
+    <string name="vehicle_rental_panelvan">Rental panel van</string>
+    <string name="vehicle_city_van">City van</string>
+    <string name="vehicle_cool_box">Refrigerated box</string>
+    <string name="vehicle_cargo_truck">Cargo truck</string>
+
+    <string name="ledger_revenue">Revenue</string>
+    <string name="ledger_fuel">Fuel</string>
+    <string name="ledger_rental">Rental</string>
+    <string name="ledger_penalty">Penalty</string>
+    <string name="ledger_upkeep">Vehicle upkeep</string>
+    <string name="ledger_purchase">Vehicle purchase</string>
+    <string name="ledger_sale">Vehicle sale</string>
+    <string name="ledger_repair">Repair</string>
+    <string name="ledger_maintenance">Maintenance</string>
+    <string name="ledger_hire">Hiring cost</string>
+    <string name="ledger_wage">Driver wage</string>
+    <string name="ledger_severance">Severance</string>
+    <string name="ledger_reservation">Reservation</string>
+    <string name="ledger_reservation_refund">Reservation refund</string>
+
+    <string name="notice_saving_failed">The game could not be saved.</string>
+    <string name="notice_not_enough_money">Not enough funds.</string>
+    <string name="notice_unavailable">That action is not available right now.</string>
+    <string name="notice_capacity">Not enough capacity.</string>
+    <string name="notice_requirement">A requirement is not met.</string>
+    <string name="notice_expired">That offer has expired.</string>
+    <string name="notice_invalid_action">That action is not possible.</string>
+    <string name="notice_delivery_finished">Delivery completed.</string>
+
+    <string name="reject_insufficient_funds">Requires %1$s; available %2$s.</string>
+    <string name="reject_capacity">Needs %1$s items / %3$s kg; available %2$s items / %4$s kg.</string>
+    <string name="reject_missing_capability">Missing capability: %1$s.</string>
+    <string name="reject_company_level">Requires stage %1$d; current stage %2$d.</string>
+    <string name="reject_region_locked">Region locked: %1$s.</string>
+    <string name="reject_vehicle_unavailable">That vehicle is not available.</string>
+    <string name="reject_vehicle_busy">That vehicle is busy.</string>
+    <string name="reject_manual_driver_busy">You are already driving another delivery.</string>
+    <string name="reject_assigned_driver_required">Assign a driver to this vehicle first.</string>
+    <string name="reject_driver_unavailable">That driver is not available.</string>
+    <string name="reject_driver_busy">That driver is busy.</string>
+    <string name="reject_driver_already_assigned">That driver is already assigned.</string>
+    <string name="reject_vehicle_already_assigned">That vehicle already has a driver.</string>
+    <string name="reject_rental_protected">Rental vehicles cannot be sold.</string>
+    <string name="reject_already_healthy">This vehicle is already in good condition.</string>
+    <string name="reject_maintenance_not_due">Maintenance is not due yet.</string>
+    <string name="reject_invalid_driver_name">Enter a valid driver name.</string>
+    <string name="reject_route_unavailable">That route is not available for this offer.</string>
+
+    <string name="duration_minutes">%1$s min</string>
+    <string name="duration_hours">%1$s h</string>
+    <string name="duration_hours_minutes">%1$s h %2$s min</string>
+    <string name="unit_kg">%1$s kg</string>
+    <string name="unit_km">%1$s km</string>
+
+    <string name="target_company_level">Reach company stage %1$d</string>
+    <string name="target_vehicle">Buy a %1$s</string>
+    <string name="target_region">Unlock %1$s</string>
+    <string name="target_first_owned_vehicle">Buy your first own vehicle</string>
+    <string name="target_progress">%1$s / %2$s</string>
 </resources>
