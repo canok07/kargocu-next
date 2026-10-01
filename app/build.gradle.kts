@@ -47,6 +47,7 @@ dependencies {
     implementation(project(":game"))
     implementation(libs.androidx.core)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.coroutines.core)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
