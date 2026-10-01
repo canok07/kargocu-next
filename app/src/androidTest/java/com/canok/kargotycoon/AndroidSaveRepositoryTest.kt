@@ -49,6 +49,17 @@ class AndroidSaveRepositoryTest {
         assertArrayEquals(original, AndroidSaveRepository(directory).readCandidates().primary)
     }
 
+    @Test fun abandonedWriterIsRecoveredWithoutACompletionCallback() = runBlocking {
+        val original = codec.encode(newGame(seed = 9).copy(revision = 1))
+        repository.write(original, 1)
+        val abandoned = AtomicFile(File(directory, "game.json")).startWrite()
+        abandoned.write("truncated-new-save".toByteArray())
+        abandoned.fd.sync()
+        // Model process death: its descriptor disappears without finishWrite/failWrite.
+        abandoned.close()
+        assertArrayEquals(original, AndroidSaveRepository(directory).readCandidates().primary)
+    }
+
     @Test fun staleAndConcurrentWritesCannotRegressDiskRevision() = runBlocking {
         val writes = (1L..12L).map { revision -> async(Dispatchers.Default) {
             repository.write(codec.encode(newGame(seed = 9).copy(revision = revision)), revision)
