@@ -6,6 +6,6 @@ Writes validate bytes/revision, reject stale disk revisions, rotate only a valid
 
 Explicit new-game replacement archives both previous candidates first. Each file commits atomically; this is not a cross-file transaction. An interruption before the new primary commits leaves the previous primary authoritative, and both originals remain in archives.
 
-Android instrumentation covers repository recreation, interrupted writes, concurrent/stale revisions, future-version protection, explicit recovery, changed-original protection, bounded reads/full archival, and explicit new-game preservation. Device results are recorded separately after execution; compiling tests is not a passing device test.
+Android instrumentation covers repository recreation, interrupted writes, concurrent/stale revisions, future-version protection, explicit recovery, changed-original protection, bounded reads/full archival, and explicit new-game preservation. All eight tests passed on the Pixel_10a API37 / Android17 emulator on 1 October 2026; both application and test APKs compiled successfully. Physical-device testing has not been performed.
 
 Reference: https://developer.android.com/reference/android/util/AtomicFile
