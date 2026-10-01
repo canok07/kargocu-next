@@ -1,8 +1,346 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Kargo Tycoon</string>
+    <string name="company_label">ŞİRKETİN</string>
+
+    <string name="nav_dashboard">Panel</string>
+    <string name="nav_jobs">İşler</string>
+    <string name="nav_fleet">Filo</string>
+    <string name="nav_team">Ekip</string>
+    <string name="nav_more">Diğer</string>
+
+    <string name="action_back">Geri</string>
+    <string name="action_cancel">Vazgeç</string>
+    <string name="action_retry">Yeniden dene</string>
+
+    <string name="language_tr">Türkçe</string>
+    <string name="language_en">English</string>
+
+    <string name="launch_opening">Kayıtlı oyun açılıyor…</string>
     <string name="welcome_label">YENİ BİR BAŞLANGIÇ</string>
     <string name="welcome_title">Kendi lojistik ağını kur.</string>
     <string name="welcome_description">İlk teslimattan büyüyen bir filoya.</string>
-    <string name="company_label">ŞİRKETİN</string>
+    <string name="welcome_language">Dil</string>
+    <string name="welcome_new_game">Yeni oyun başlat</string>
+    <string name="welcome_new_game_hint">100 EUR ve kendi sürdüğün bir kiralık panelvan ile başlarsın.</string>
+
+    <string name="recovery_title">Kaydın ilgi bekliyor</string>
+    <string name="recovery_body">Kayıtlı oyun okunamadı ve güvenle saklandı. Son iyi kopyayı geri yükleyebilir ya da yeni bir oyun başlatabilirsin (mevcut kayıtlar arşivlenir).</string>
+    <string name="recovery_future_body">Bu kayıt oyunun daha yeni bir sürümüyle oluşturulmuş, bu yüzden dokunulmadı. Son iyi kopyayı geri yükle ya da yeni bir oyun başlat (yeni kayıt arşivlenir).</string>
+    <string name="recovery_restore">Son iyi kaydı geri yükle</string>
+    <string name="recovery_new_game">Bunun yerine yeni oyun başlat</string>
+    <string name="read_error_title">Depolama kullanılamıyor</string>
+    <string name="read_error_body">Oyun yerel depolamayı açamadı. Cihazda boş alan olduğundan emin ol ve tekrar dene.</string>
+    <string name="read_error_retry">Tekrar dene</string>
+
+    <string name="dashboard_balance">Kullanılabilir bakiye</string>
+    <string name="dashboard_day">Oyun günü</string>
+    <string name="dashboard_stage">Şirket kademesi</string>
+    <string name="dashboard_stage_label">Kademe</string>
+    <string name="dashboard_stage_value">Kademe %1$d</string>
+    <string name="dashboard_time_hint">Zaman kendi kendine ilerler: 1 gerçek saniye = 1 oyun dakikası. Uygulamadan çıkmak duraklatır.</string>
+    <string name="dashboard_end_day">Günü bitir</string>
+    <string name="end_day_confirm_title">Günü bitir?</string>
+    <string name="end_day_confirm_body">Devam eden teslimatlar tamamlanır ve kalan teklifler yok sayılır. Oyun sonraki oyun gününde sürer.</string>
+    <string name="dashboard_active_title">Aktif teslimatlar</string>
+    <string name="dashboard_no_active_title">Devam eden teslimat yok</string>
+    <string name="dashboard_no_active_body">Başlamak için pazardan bir iş kabul et.</string>
+    <string name="dashboard_go_jobs">İş pazarı</string>
+    <string name="dashboard_go_fleet">Filoyu aç</string>
+    <string name="dashboard_daily_title">Son gün özeti</string>
+    <string name="dashboard_daily_none">Henüz hiçbir oyun günü kapanmadı.</string>
+    <string name="dashboard_daily_body">Gelir %1$s · Gider %2$s · %3$d iş</string>
+    <string name="dashboard_last_net_title">Son teslimat</string>
+    <string name="dashboard_last_net_value">Net %1$s</string>
+    <string name="dashboard_no_completed">Henüz tamamlanan teslimat yok.</string>
+    <string name="dashboard_targets_title">Sıradaki hedefler</string>
+    <string name="dashboard_targets_none">Güncel tüm hedefler tamam.</string>
+
+    <string name="jobs_tab_offers">Teklifler</string>
+    <string name="jobs_tab_deliveries">Teslimatlar</string>
+    <string name="jobs_offer_count">%1$d açık</string>
+    <string name="jobs_empty_title">Bugünlük teklif kalmadı</string>
+    <string name="jobs_empty_body">Yeni teklifler sonraki oyun günü gelir. Aynı gün içinde liste yenilenmez.</string>
+    <string name="jobs_offer_subtitle">%1$s · %2$d × %3$s · %4$s</string>
+    <string name="jobs_active_title">Aktif</string>
+    <string name="jobs_active_empty">Aktif teslimat yok.</string>
+    <string name="jobs_history_title">Geçmiş</string>
+    <string name="jobs_history_empty">Henüz tamamlanan teslimat yok.</string>
+
+    <string name="job_detail_title">Teklif</string>
+    <string name="job_offer_facts">Teklif ayrıntıları</string>
+    <string name="offer_route">Güzergâh</string>
+    <string name="offer_package">Paket</string>
+    <string name="offer_load">Yük</string>
+    <string name="offer_count_weight">%1$s × %2$s</string>
+    <string name="offer_risk">Risk</string>
+    <string name="offer_distance">Mesafe</string>
+    <string name="job_vehicle_title">Araç seç</string>
+    <string name="job_vehicle_capacity">%1$s · %2$s</string>
+    <string name="job_no_vehicle_title">Uygun araç yok</string>
+    <string name="job_no_vehicle_body">Tüm araçlar meşgul. Bir teslimatın bitmesini bekle ya da günü bitir.</string>
+    <string name="job_route_title">Güzergâh</string>
+    <string name="job_mode_title">Sürüş</string>
+    <string name="job_mode_manual">Kendim sürerim</string>
+    <string name="job_mode_assigned">Şoförle gönder</string>
+    <string name="job_assigned_unavailable">Bu araca atanmış şoför yok.</string>
+    <string name="job_preview_title">Önizleme</string>
+    <string name="job_preview_none">Önizleme hesaplanıyor…</string>
+    <string name="job_preview_payout">Ödeme</string>
+    <string name="job_preview_reservation">Azami gider rezervi</string>
+    <string name="job_preview_duration">Süre</string>
+    <string name="job_accept">İşi kabul et</string>
+    <string name="job_offer_missing_title">Teklif artık yok</string>
+    <string name="job_offer_missing_body">Bu teklif kabul edildi ya da süresi doldu.</string>
+    <string name="selected">Seçili</string>
+    <string name="unknown_vehicle">Bilinmeyen araç</string>
+    <string name="value_none">—</string>
+    <string name="value_calculating">Hesaplanıyor…</string>
+
+    <string name="route_line">%1$s → %2$s</string>
+    <string name="active_job_subtitle">%1$s · %2$s</string>
+    <string name="job_manual_driver">Sen</string>
+    <string name="job_remaining">%1$s kaldı</string>
+    <string name="history_title">%1$s. gün · %2$s</string>
+    <string name="history_breakdown">Gelir %1$s · Gider %2$s</string>
+    <string name="history_on_time">Zamanında</string>
+    <string name="history_late">Gecikmeli</string>
+    <string name="history_risk">Risk gerçekleşti</string>
+    <string name="history_no_risk">Risk yok</string>
+
+    <string name="fleet_purchase_button">Satın alma pazarı</string>
+    <string name="fleet_empty_title">Araç yok</string>
+    <string name="fleet_empty_body">Büyümek için satın alma pazarından bir araç al.</string>
+    <string name="vehicle_detail_title">Araç</string>
+    <string name="vehicle_missing_title">Araç bulunamadı</string>
+    <string name="vehicle_missing_body">Bu araç artık filonda değil.</string>
+    <string name="vehicle_ownership">Sahiplik</string>
+    <string name="vehicle_status">Durum</string>
+    <string name="vehicle_capacity">Kapasite</string>
+    <string name="vehicle_capacity_value">%1$s · %2$s</string>
+    <string name="vehicle_capabilities">Yetenekler</string>
+    <string name="vehicle_condition">Kondisyon</string>
+    <string name="vehicle_mileage">Kilometre</string>
+    <string name="vehicle_earned">Toplam kazanç</string>
+    <string name="vehicle_costs">Toplam işletme gideri</string>
+    <string name="vehicle_driver">Şoför</string>
+    <string name="vehicle_actions">İşlemler</string>
+    <string name="vehicle_repair">Onar</string>
+    <string name="vehicle_maintain">Bakım yap</string>
+    <string name="vehicle_sell">Sat</string>
+    <string name="vehicle_assign_driver">Şoför ata</string>
+    <string name="vehicle_busy_note">Bu araç meşgul, bu yüzden bazı işlemler kullanılamaz.</string>
+    <string name="vehicle_rental_note">Kiralık araçlar satılamaz.</string>
+    <string name="repair_confirm_title">Araç onarılsın mı?</string>
+    <string name="repair_confirm_body">Tam onarım %1$s tutar.</string>
+    <string name="maintain_confirm_title">Bakım yapılsın mı?</string>
+    <string name="maintain_confirm_body">Bakım %1$s tutar ve kondisyonu iyileştirir.</string>
+    <string name="sell_confirm_title">Araç satılsın mı?</string>
+    <string name="sell_confirm_body">%1$s alırsın. Bu geri alınamaz.</string>
+
+    <string name="ownership_owned">Sahip olunan</string>
+    <string name="ownership_rental">Kiralık</string>
+    <string name="vehicle_status_available">Uygun</string>
+    <string name="vehicle_status_busy">Meşgul</string>
+    <string name="vehicle_status_maintenance">Bakımda</string>
+
+    <string name="purchase_title">Satın alma pazarı</string>
+    <string name="purchase_empty_title">Satın alınacak bir şey yok</string>
+    <string name="purchase_empty_body">Bu pazarda uygun araç yok.</string>
+    <string name="purchase_ready">Satın alınabilir</string>
+    <string name="purchase_need_funds">Yetersiz bakiye</string>
+    <string name="purchase_requires_level">Kademe %1$d gerekir</string>
+    <string name="purchase_confirm_title">Bu araç satın alınsın mı?</string>
+    <string name="purchase_confirm_body">%1$s aracını %2$s bedelle satın al.</string>
+    <string name="purchase_action">Satın al</string>
+    <string name="purchase_footer">Satın alınan araç şirketine aittir. Günlük bakım ve yakıtı çalışılan güne göre yansıtılır.</string>
+
+    <string name="team_hire_button">Şoför işe al</string>
+    <string name="team_empty_title">Henüz şoför yok</string>
+    <string name="team_empty_body">İlk teslimatları kendin sürerek başlayabilirsin.</string>
+    <string name="team_driver_jobs">%1$s iş</string>
+
+    <string name="hire_title">Şoför işe al</string>
+    <string name="hire_tier_title">Bir seviye seç</string>
+    <string name="hire_tier_subtitle">Maaş %1$s · İşe alım %2$s</string>
+    <string name="hire_requires_level">Kademe %1$d gerekir</string>
+    <string name="hire_name_title">Şoför adı</string>
+    <string name="hire_name_label">Ad</string>
+    <string name="hire_name_hint">En fazla 40 karakterlik bir ad gir.</string>
+    <string name="hire_action">İşe al</string>
+
+    <string name="driver_detail_title">Şoför</string>
+    <string name="driver_missing_title">Şoför bulunamadı</string>
+    <string name="driver_missing_body">Bu şoför artık ekibinde değil.</string>
+    <string name="driver_tier">Seviye</string>
+    <string name="driver_status">Durum</string>
+    <string name="driver_experience">Deneyim</string>
+    <string name="driver_vehicle">Araç</string>
+    <string name="driver_unassign">Atamayı kaldır</string>
+    <string name="driver_fire">İşten çıkar</string>
+    <string name="driver_busy_note">Bu şoför bir teslimatta, bu yüzden işlemler o bitene kadar kullanılamaz.</string>
+    <string name="fire_confirm_title">Bu şoför işten çıkarılsın mı?</string>
+    <string name="fire_confirm_body">%1$s ekipten ayrılır. Kıdem tazminatı %2$s tutar.</string>
+
+    <string name="driver_status_available">Uygun</string>
+    <string name="driver_status_driving">Sürüşte</string>
+    <string name="driver_status_unavailable">Uygun değil</string>
+
+    <string name="assign_title">Şoför ata</string>
+    <string name="assign_empty_title">Uygun şoför yok</string>
+    <string name="assign_empty_body">Önce bir şoför işe al ya da mevcut bir şoförün boşalmasını bekle.</string>
+    <string name="assign_note">Bir şoför yalnızca bir araca atanabilir.</string>
+
+    <string name="tier_junior">Acemi</string>
+    <string name="tier_profi">Profesyonel</string>
+
+    <string name="map_title">Harita</string>
+    <string name="map_hint">Bölgeyi incelemek için bir düğüme ya da bölge etiketine dokun.</string>
+    <string name="map_legend_active">Aktif güzergâh</string>
+    <string name="map_legend_locked">Kilitli bölge</string>
+    <string name="map_region_status">Durum</string>
+    <string name="map_region_unlocked">Açık</string>
+    <string name="map_region_locked">Kilitli</string>
+    <string name="map_select_hint">Koşullarını görmek için bir bölge seç.</string>
+    <string name="map_condition_jobs">Tamamlanan iş</string>
+    <string name="map_condition_vehicles">Sahip olunan araç</string>
+    <string name="map_condition_day">Oyun günü</string>
+
+    <string name="region_ruhr">Ruhr Bölgesi</string>
+    <string name="region_rhein_main">Ren-Main</string>
+    <string name="region_elbe">Elbe Koridoru</string>
+
+    <string name="location_essen_hub">Essen Deposu</string>
+    <string name="location_dortmund_market">Dortmund Pazarı</string>
+    <string name="location_frankfurt_terminal">Frankfurt Terminali</string>
+    <string name="location_mainz_quay">Mainz Rıhtımı</string>
+    <string name="location_hamburg_port">Hamburg Limanı</string>
+    <string name="location_leipzig_yard">Leipzig Garı</string>
+
+    <string name="company_title">Şirket</string>
+    <string name="company_completed">Tamamlanan iş</string>
+    <string name="company_on_time">Zamanında iş</string>
+    <string name="company_owned">Sahip olunan araç</string>
+    <string name="company_employees">Çalışan</string>
+    <string name="company_regions">Açık bölge</string>
+    <string name="company_regions_value">%1$d / %2$d</string>
+    <string name="company_next_stage">Sonraki kademe</string>
+    <string name="company_next_stage_name">Kademe %1$d koşulları</string>
+    <string name="company_max_stage">En yüksek kademeye ulaştın.</string>
+    <string name="company_requirement_jobs">Tamamlanan iş</string>
+    <string name="company_requirement_vehicles">Sahip olunan araç</string>
+    <string name="company_requirement_drivers">Şoför</string>
+    <string name="company_requirement_day">Oyun günü</string>
+    <string name="company_regions_title">Bölgeler</string>
+
+    <string name="more_title">Diğer</string>
+    <string name="more_map_subtitle">Şematik ağ ve bölge kapıları</string>
+    <string name="more_company_subtitle">Kademe, filo ve bölge ilerlemesi</string>
+    <string name="more_settings_subtitle">Dil, geri bildirim ve veri</string>
+
+    <string name="settings_title">Ayarlar</string>
+    <string name="settings_language">Dil</string>
+    <string name="settings_feedback">Geri bildirim</string>
+    <string name="settings_sound">Ses</string>
+    <string name="settings_sound_hint">İşlemler için kısa bir onay tonu.</string>
+    <string name="settings_haptics">Dokunsal geri bildirim</string>
+    <string name="settings_haptics_hint">Dokunma ve onaylarda hafif titreşim.</string>
+    <string name="settings_tutorial_section">Öğretici</string>
+    <string name="settings_tutorial_show">Öğretici yönlendirmeyi göster</string>
+    <string name="settings_tutorial_hint">Adım adım yönlendirmeyi yeniden aç.</string>
+    <string name="settings_data">Veri</string>
+    <string name="settings_storage_note">Oyunun yalnızca bu cihazda saklanır. Hesap ya da bulut eşitlemesi yoktur.</string>
+    <string name="settings_reset">Yeni oyun başlat</string>
+    <string name="reset_confirm_title">Baştan başla?</string>
+    <string name="reset_confirm_body">Bu, mevcut oyunun yerine geçer. Mevcut kayıtlar değiştirilmeden önce cihazda arşivlenir.</string>
+    <string name="reset_confirm_action">Baştan başla</string>
+
+    <string name="tutorial_dismiss">Gizle</string>
+    <string name="tutorial_accept_title">İlk işini al</string>
+    <string name="tutorial_accept_body">İş pazarını aç ve uygun bir teklif seç. Şoförün yoksa kendin sür.</string>
+    <string name="tutorial_accept_action">İş pazarını aç</string>
+    <string name="tutorial_complete_title">Teslimatı tamamla</string>
+    <string name="tutorial_complete_body">Zaman kendi kendine ilerler. Güzergâhın bitmesini bekle ya da günü bitir.</string>
+    <string name="tutorial_complete_action">Panele git</string>
+    <string name="tutorial_buy_title">İlk aracını satın al</string>
+    <string name="tutorial_buy_body">Filoda, satın alma pazarından şirketine bir araç seç.</string>
+    <string name="tutorial_buy_action">Filoyu aç</string>
+    <string name="tutorial_hire_title">Şoför işe al</string>
+    <string name="tutorial_hire_body">Ekipte bir şoför işe al ve bir araca ata.</string>
+    <string name="tutorial_hire_action">Ekibi aç</string>
+    <string name="tutorial_parallel_title">Paralel teslimat yürüt</string>
+    <string name="tutorial_parallel_body">İkinci bir aracı da bir işe gönder, böylece iki teslimat aynı anda sürsün.</string>
+    <string name="tutorial_parallel_action">İşleri aç</string>
+
+    <string name="package_parcel">Koli</string>
+    <string name="package_glass">Cam Eşya</string>
+    <string name="package_fresh">Soğuk Gıda</string>
+    <string name="package_chemical">Laboratuvar Malzemesi</string>
+
+    <string name="risk_calm">Sakin Sürüş</string>
+    <string name="risk_rush">Yoğun Trafik</string>
+
+    <string name="capability_refrigerated">Soğutmalı</string>
+    <string name="capability_fragile">Kırılgan</string>
+    <string name="capability_hazardous">Tehlikeli Madde</string>
+
+    <string name="vehicle_rental_panelvan">Kiralık Panelvan</string>
+    <string name="vehicle_city_van">Şehir Vanı</string>
+    <string name="vehicle_cool_box">Soğutucu Kasa</string>
+    <string name="vehicle_cargo_truck">Kamyon</string>
+
+    <string name="ledger_revenue">Gelir</string>
+    <string name="ledger_fuel">Yakıt</string>
+    <string name="ledger_rental">Kira</string>
+    <string name="ledger_penalty">Ceza</string>
+    <string name="ledger_upkeep">Araç bakım gideri</string>
+    <string name="ledger_purchase">Araç alımı</string>
+    <string name="ledger_sale">Araç satışı</string>
+    <string name="ledger_repair">Onarım</string>
+    <string name="ledger_maintenance">Bakım</string>
+    <string name="ledger_hire">İşe alım gideri</string>
+    <string name="ledger_wage">Şoför maaşı</string>
+    <string name="ledger_severance">Kıdem tazminatı</string>
+    <string name="ledger_reservation">Rezervasyon</string>
+    <string name="ledger_reservation_refund">Rezervasyon iadesi</string>
+
+    <string name="notice_saving_failed">Oyun kaydedilemedi.</string>
+    <string name="notice_not_enough_money">Yetersiz bakiye.</string>
+    <string name="notice_unavailable">Bu işlem şu anda kullanılamıyor.</string>
+    <string name="notice_capacity">Kapasite yetersiz.</string>
+    <string name="notice_requirement">Bir koşul karşılanmıyor.</string>
+    <string name="notice_expired">Bu teklifin süresi doldu.</string>
+    <string name="notice_invalid_action">Bu işlem mümkün değil.</string>
+    <string name="notice_delivery_finished">Teslimat tamamlandı.</string>
+
+    <string name="reject_insufficient_funds">%1$s gerekir; mevcut %2$s.</string>
+    <string name="reject_capacity">%1$s adet / %3$s kg gerekir; uygun %2$s adet / %4$s kg.</string>
+    <string name="reject_missing_capability">Eksik yetenek: %1$s.</string>
+    <string name="reject_company_level">Kademe %1$d gerekir; mevcut kademe %2$d.</string>
+    <string name="reject_region_locked">Bölge kilitli: %1$s.</string>
+    <string name="reject_vehicle_unavailable">Bu araç uygun değil.</string>
+    <string name="reject_vehicle_busy">Bu araç meşgul.</string>
+    <string name="reject_manual_driver_busy">Zaten başka bir teslimatı sen sürüyorsun.</string>
+    <string name="reject_assigned_driver_required">Önce bu araca bir şoför ata.</string>
+    <string name="reject_driver_unavailable">Bu şoför uygun değil.</string>
+    <string name="reject_driver_busy">Bu şoför meşgul.</string>
+    <string name="reject_driver_already_assigned">Bu şoför zaten atanmış.</string>
+    <string name="reject_vehicle_already_assigned">Bu araçta zaten bir şoför var.</string>
+    <string name="reject_rental_protected">Kiralık araçlar satılamaz.</string>
+    <string name="reject_already_healthy">Bu aracın kondisyonu zaten iyi.</string>
+    <string name="reject_maintenance_not_due">Bakım zamanı henüz gelmedi.</string>
+    <string name="reject_invalid_driver_name">Geçerli bir şoför adı gir.</string>
+    <string name="reject_route_unavailable">Bu güzergâh bu teklif için uygun değil.</string>
+
+    <string name="duration_minutes">%1$s dk</string>
+    <string name="duration_hours">%1$s sa</string>
+    <string name="duration_hours_minutes">%1$s sa %2$s dk</string>
+    <string name="unit_kg">%1$s kg</string>
+    <string name="unit_km">%1$s km</string>
+
+    <string name="target_company_level">Kademe %1$d seviyesine ulaş</string>
+    <string name="target_vehicle">Bir %1$s satın al</string>
+    <string name="target_region">%1$s bölgesini aç</string>
+    <string name="target_first_owned_vehicle">İlk kendi aracını satın al</string>
+    <string name="target_progress">%1$s / %2$s</string>
 </resources>
