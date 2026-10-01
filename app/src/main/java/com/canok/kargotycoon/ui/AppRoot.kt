@@ -20,8 +20,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -96,9 +96,14 @@ fun KargoApp(viewModel: GameViewModel = viewModel()) {
             }
                 SessionNotices(
                     viewModel, sessionState.notice, sessionState.noticeSequence,
-                    Modifier.align(Alignment.BottomCenter).padding(
-                        bottom = if (sessionState.mode == SessionMode.PLAYING) 88.dp else 24.dp,
-                    ),
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            bottom = if (sessionState.mode == SessionMode.PLAYING) 88.dp else 24.dp,
+                        ),
                 )
             }
         }

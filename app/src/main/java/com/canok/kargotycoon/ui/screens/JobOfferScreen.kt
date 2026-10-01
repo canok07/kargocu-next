@@ -144,10 +144,22 @@ fun JobOfferScreen(
         }
 
         SectionHeading(stringResource(R.string.job_mode_title))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ChoiceChip(effectiveManual, stringResource(R.string.job_mode_manual), { manual = true }, testTag = TestTags.JOB_MODE_MANUAL)
+        androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChoiceChip(
+                effectiveManual,
+                stringResource(R.string.job_mode_manual),
+                { manual = true },
+                modifier = Modifier.fillMaxWidth(),
+                testTag = TestTags.JOB_MODE_MANUAL,
+            )
             if (assignedAvailable) {
-                ChoiceChip(!effectiveManual, stringResource(R.string.job_mode_assigned), { manual = false }, testTag = TestTags.JOB_MODE_ASSIGNED)
+                ChoiceChip(
+                    !effectiveManual,
+                    stringResource(R.string.job_mode_assigned),
+                    { manual = false },
+                    modifier = Modifier.fillMaxWidth(),
+                    testTag = TestTags.JOB_MODE_ASSIGNED,
+                )
             }
         }
         if (!assignedAvailable) {

@@ -17,13 +17,14 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.canok.kargotycoon.data.SessionController
 import com.canok.kargotycoon.data.SessionMode
 import com.canok.kargotycoon.game.domain.Ownership
+import com.canok.kargotycoon.game.domain.VehicleId
 import com.canok.kargotycoon.game.domain.VehicleStatus
 import com.canok.kargotycoon.game.engine.GameCommand
 import com.canok.kargotycoon.game.engine.GameEngine
 import com.canok.kargotycoon.game.engine.GameResult
 import com.canok.kargotycoon.ui.TestTags
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -142,7 +143,7 @@ class AppUiTest {
     }
 
     @Test
-    fun buysHiresAndAssignsUsingOnlyRealEngineCommands() {
+    fun completesParallelCareerJourneyUsingOnlyRealEngineCommands() {
         earnUntil(targetCents = 130_000L, minimumJobs = 4, minimumDay = 2)
         // The last completion snackbar can cover the lowest vehicle action.
         // Wait for its normal dismissal before interacting with that action.
@@ -180,6 +181,67 @@ class AppUiTest {
         compose.waitUntil(timeoutMillis = 15_000) {
             game().vehicles.first { it.id == owned.id }.assignedDriverId != null
         }
+
+        val rental = game().vehicles.single { it.ownership == Ownership.RENTAL }
+        var selections: Pair<JobSelection, JobSelection>? = null
+        for (attempt in 0 until 7) {
+            selections = parallelSelections(owned.id, rental.id)
+            if (selections != null) break
+            assertTrue(runBlocking { session.dispatch(GameCommand.AdvanceDay(SessionController.id())) } is com.canok.kargotycoon.game.persistence.StoreCommandResult.Applied)
+        }
+        val (assignedJob, manualJob) = requireNotNull(selections) { "expected a feasible assigned/manual offer pair" }
+        acceptJobThroughUi(assignedJob)
+        acceptJobThroughUi(manualJob)
+
+        val beforeRecreate = game().activeJobs
+        assertEquals(2, beforeRecreate.size)
+        assertEquals(2, beforeRecreate.map { it.vehicleId }.toSet().size)
+        assertTrue(beforeRecreate.any { it.vehicleId == owned.id && !it.manualDriving && it.driverId?.value == driverId })
+        assertTrue(beforeRecreate.any { it.vehicleId == rental.id && it.manualDriving && it.driverId == null })
+
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(timeoutMillis = 15_000) { game().activeJobs.size == 2 }
+        waitForTag(TestTags.JOBS_ROOT)
+        assertEquals(beforeRecreate, game().activeJobs)
+    }
+
+    private data class JobSelection(val offerId: String, val vehicleId: VehicleId, val routeId: String, val manual: Boolean)
+
+    private fun parallelSelections(ownedId: VehicleId, rentalId: VehicleId): Pair<JobSelection, JobSelection>? {
+        val state = game()
+        for (assignedOffer in state.offers) {
+            for (assignedRoute in assignedOffer.routeOptions) {
+                val assignedCommand = GameCommand.AcceptJob(SessionController.id(), assignedOffer.id, ownedId, assignedRoute, false)
+                val afterAssigned = engine.reduce(state, assignedCommand) as? GameResult.Applied ?: continue
+                for (manualOffer in afterAssigned.state.offers) {
+                    for (manualRoute in manualOffer.routeOptions) {
+                        val manualCommand = GameCommand.AcceptJob(SessionController.id(), manualOffer.id, rentalId, manualRoute, true)
+                        if (engine.reduce(afterAssigned.state, manualCommand) is GameResult.Applied) {
+                            return JobSelection(assignedOffer.id.value, ownedId, assignedRoute.value, false) to
+                                JobSelection(manualOffer.id.value, rentalId, manualRoute.value, true)
+                        }
+                    }
+                }
+            }
+        }
+        return null
+    }
+
+    private fun acceptJobThroughUi(selection: JobSelection) {
+        compose.onNodeWithTag(TestTags.NAV_JOBS).performClick()
+        waitForTag(TestTags.JOBS_ROOT)
+        compose.onNodeWithTag(TestTags.JOBS_OFFERS_LIST).performScrollToNode(hasTestTag(TestTags.offer(selection.offerId)))
+        compose.onNodeWithTag(TestTags.offer(selection.offerId)).performClick()
+        waitForTag(TestTags.JOB_DETAIL_ROOT)
+        compose.onNodeWithTag(TestTags.jobVehicle(selection.vehicleId.value)).performScrollTo().performClick()
+        compose.onNodeWithTag(TestTags.jobRoute(selection.routeId)).performScrollTo().performClick()
+        compose.onNodeWithTag(if (selection.manual) TestTags.JOB_MODE_MANUAL else TestTags.JOB_MODE_ASSIGNED).performScrollTo().performClick()
+        compose.waitUntil(timeoutMillis = 15_000) {
+            runCatching { compose.onNodeWithTag(TestTags.JOB_ACCEPT).assertIsEnabled() }.isSuccess
+        }
+        val activeCount = game().activeJobs.size
+        compose.onNodeWithTag(TestTags.JOB_ACCEPT).performScrollTo().performClick()
+        compose.waitUntil(timeoutMillis = 15_000) { game().activeJobs.size == activeCount + 1 }
     }
 
     /** Read-only engine probe: which offer can the current fleet actually accept right now. */
