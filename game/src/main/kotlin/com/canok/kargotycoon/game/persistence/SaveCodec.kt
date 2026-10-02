@@ -57,7 +57,7 @@ class SaveCodec(
         if (bytes == null) return SaveDecodeResult.Missing
         if (bytes.size > maximumBytes) return SaveDecodeResult.Corrupt(CorruptionReason.TooLarge)
         val text = try { bytes.decodeToString(throwOnInvalidSequence = true) } catch (_: CharacterCodingException) { return SaveDecodeResult.Corrupt(CorruptionReason.InvalidUtf8) }
-        val root = try { json.parseToJsonElement(text).jsonObject } catch (_: Exception) { return SaveDecodeResult.Corrupt(CorruptionReason.InvalidJson) }
+        val root = try { json.parseToJsonElement(text).jsonObject } catch (_: Exception) { return SaveDecodeResult.Corrupt(CorruptionReason.InvalidJson) } catch (_: StackOverflowError) { return SaveDecodeResult.Corrupt(CorruptionReason.InvalidJson) }
         val saveVersion = root.requiredInt("saveVersion") ?: return fieldFailure(root, "saveVersion")
         if (saveVersion > CURRENT_SAVE_VERSION) return SaveDecodeResult.FutureVersion(saveVersion, bytes.copyOf())
         if (saveVersion < MINIMUM_SAVE_VERSION) return SaveDecodeResult.Corrupt(CorruptionReason.UnsupportedOldVersion(saveVersion))
@@ -82,7 +82,7 @@ class SaveCodec(
         val checksum = (root["checksum"] as JsonPrimitive).content
         val payload = root["payload"] as JsonObject
         if (!checksum.equals(checksum(payload), ignoreCase = true)) return SaveDecodeResult.Corrupt(CorruptionReason.ChecksumMismatch)
-        val state = try { json.decodeFromJsonElement(GameState.serializer(), payload) } catch (_: SerializationException) { return SaveDecodeResult.Corrupt(CorruptionReason.InvalidJson) } catch (_: IllegalArgumentException) { return SaveDecodeResult.Corrupt(CorruptionReason.InvalidJson) }
+        val state = try { json.decodeFromJsonElement(GameState.serializer(), payload) } catch (_: SerializationException) { return SaveDecodeResult.Corrupt(CorruptionReason.InvalidJson) } catch (_: IllegalArgumentException) { return SaveDecodeResult.Corrupt(CorruptionReason.InvalidJson) } catch (_: StackOverflowError) { return SaveDecodeResult.Corrupt(CorruptionReason.InvalidJson) }
         if (stateVersion != CURRENT_STATE_VERSION || stateVersion != state.stateVersion) return SaveDecodeResult.Corrupt(CorruptionReason.MetadataMismatch("stateVersion"))
         if (catalogVersion != state.catalogVersion || catalogVersion != catalog.version) return SaveDecodeResult.Corrupt(CorruptionReason.MetadataMismatch("catalogVersion"))
         if (revision != state.revision || revision < 0) return SaveDecodeResult.Corrupt(CorruptionReason.MetadataMismatch("revision"))

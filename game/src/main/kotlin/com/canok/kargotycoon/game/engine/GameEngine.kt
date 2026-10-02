@@ -249,9 +249,10 @@ class GameEngine(
         val spec = catalog.vehicles.first { it.id == vehicle.specId }
         val cost = Money(Math.multiplyExact((100 - vehicle.conditionPercent).toLong(), spec.repairCentsPerConditionPoint))
         if (state.money < cost) return GameResult.Rejected(state, Rejection.InsufficientFunds(cost, state.money))
-        val entry = ledger(state, LedgerType.REPAIR, Money(-cost.cents), vehicleId = vehicle.id)
-        val next = markProcessed(state.copy(money = state.money - cost, nextEntitySequence = state.nextEntitySequence + 1, vehicles = state.vehicles.map { if (it.id == vehicle.id) it.copy(conditionPercent = 100, totalOperatingCosts = it.totalOperatingCosts + cost) else it }, ledger = bounded(state.ledger + entry)), command.commandId)
-        return GameResult.Applied(next, listOf(GameEvent.LedgerBooked(entry), GameEvent.VehicleRepaired(vehicle.id, cost)))
+        // A zero-cost repair (e.g. the free starter rental) must not book a zero ledger entry.
+        val entries = if (cost.cents > 0) listOf(ledger(state, LedgerType.REPAIR, Money(-cost.cents), vehicleId = vehicle.id)) else emptyList()
+        val next = markProcessed(state.copy(money = state.money - cost, nextEntitySequence = state.nextEntitySequence + 1, vehicles = state.vehicles.map { if (it.id == vehicle.id) it.copy(conditionPercent = 100, totalOperatingCosts = it.totalOperatingCosts + cost) else it }, ledger = bounded(state.ledger + entries)), command.commandId)
+        return GameResult.Applied(next, entries.map { GameEvent.LedgerBooked(it) } + GameEvent.VehicleRepaired(vehicle.id, cost))
     }
 
     private fun maintainVehicle(state: GameState, command: GameCommand.MaintainVehicle): GameResult {
@@ -261,9 +262,10 @@ class GameEngine(
         val spec = catalog.vehicles.first { it.id == vehicle.specId }
         val cost = spec.purchasePrice.percentage(catalog.economy.maintenanceCostBasisPoints)
         if (state.money < cost) return GameResult.Rejected(state, Rejection.InsufficientFunds(cost, state.money))
-        val entry = ledger(state, LedgerType.MAINTENANCE, Money(-cost.cents), vehicleId = vehicle.id)
-        val next = markProcessed(state.copy(money = state.money - cost, nextEntitySequence = state.nextEntitySequence + 1, vehicles = state.vehicles.map { if (it.id == vehicle.id) it.copy(conditionPercent = minOf(100, it.conditionPercent + 15), maintainedAtMeters = it.mileageMeters, totalOperatingCosts = it.totalOperatingCosts + cost) else it }, ledger = bounded(state.ledger + entry)), command.commandId)
-        return GameResult.Applied(next, listOf(GameEvent.LedgerBooked(entry), GameEvent.VehicleMaintained(vehicle.id, cost)))
+        // A zero-cost maintenance (e.g. the free starter rental) must not book a zero ledger entry.
+        val entries = if (cost.cents > 0) listOf(ledger(state, LedgerType.MAINTENANCE, Money(-cost.cents), vehicleId = vehicle.id)) else emptyList()
+        val next = markProcessed(state.copy(money = state.money - cost, nextEntitySequence = state.nextEntitySequence + 1, vehicles = state.vehicles.map { if (it.id == vehicle.id) it.copy(conditionPercent = minOf(100, it.conditionPercent + 15), maintainedAtMeters = it.mileageMeters, totalOperatingCosts = it.totalOperatingCosts + cost) else it }, ledger = bounded(state.ledger + entries)), command.commandId)
+        return GameResult.Applied(next, entries.map { GameEvent.LedgerBooked(it) } + GameEvent.VehicleMaintained(vehicle.id, cost))
     }
 
     private fun generateOffers(state: GameState, commandId: CommandId): GameResult {
