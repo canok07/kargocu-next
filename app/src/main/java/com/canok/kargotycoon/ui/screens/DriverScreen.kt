@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.canok.kargotycoon.R
 import com.canok.kargotycoon.game.domain.DriverId
@@ -74,7 +75,7 @@ fun DriverScreen(
         SectionHeading(driver.name)
         KeyValueRow(stringResource(R.string.driver_tier), tier?.let { tierName(it) } ?: stringResource(R.string.value_none))
         KeyValueRow(stringResource(R.string.driver_status), driverStatusName(driver.status))
-        KeyValueRow(stringResource(R.string.driver_experience), stringResource(R.string.team_driver_jobs, formatInteger(driver.experienceJobs.toLong(), locale)))
+        KeyValueRow(stringResource(R.string.driver_experience), pluralStringResource(R.plurals.team_driver_jobs, driver.experienceJobs, formatInteger(driver.experienceJobs.toLong(), locale)))
         KeyValueRow(stringResource(R.string.driver_vehicle), vehicleSpec?.let { vehicleName(it) } ?: stringResource(R.string.value_none))
 
         if (busy) {

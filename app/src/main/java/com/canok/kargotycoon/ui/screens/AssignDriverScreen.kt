@@ -7,6 +7,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.canok.kargotycoon.R
@@ -38,7 +39,7 @@ fun AssignDriverScreen(vehicleId: String, game: GameState, onAssign: (DriverId) 
             items(candidates, key = { it.id.value }) { driver ->
                 LedgerRow(
                     title = driver.name,
-                    subtitle = stringResource(R.string.team_driver_jobs, formatInteger(driver.experienceJobs.toLong(), locale)),
+                    subtitle = pluralStringResource(R.plurals.team_driver_jobs, driver.experienceJobs, formatInteger(driver.experienceJobs.toLong(), locale)),
                     mark = Mark.Team,
                     onClick = { onAssign(driver.id) },
                     testTag = TestTags.driver(driver.id.value),

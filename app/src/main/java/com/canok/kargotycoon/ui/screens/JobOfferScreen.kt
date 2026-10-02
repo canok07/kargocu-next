@@ -122,7 +122,7 @@ fun JobOfferScreen(
                             weightText(it.capacityGrams),
                         ) + " · " + ownershipName(candidate.ownership) + (driver?.let { " · " + it.name } ?: "")
                     },
-                    value = if (candidate.id.value == selectedVehicle) stringResource(R.string.selected) else null,
+                    value = if (candidate.id.value == selectedVehicle) stringResource(R.string.choice_selected) else null,
                     mark = Mark.Fleet,
                     onClick = { selectedVehicle = candidate.id.value },
                     testTag = TestTags.jobVehicle(candidate.id.value),
@@ -136,7 +136,7 @@ fun JobOfferScreen(
             LedgerRow(
                 title = spec?.let { stringResource(R.string.route_line, locationName(it.originId), locationName(it.destinationId)) } ?: routeId.value,
                 subtitle = spec?.let { distanceText(it.distanceMeters) + " · " + durationText(it.durationGameMinutes.toLong()) },
-                value = if (routeId.value == selectedRoute) stringResource(R.string.selected) else null,
+                value = if (routeId.value == selectedRoute) stringResource(R.string.choice_selected) else null,
                 mark = Mark.Route,
                 onClick = { selectedRoute = routeId.value },
                 testTag = TestTags.jobRoute(routeId.value),

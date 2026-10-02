@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.canok.kargotycoon.R
@@ -57,7 +58,7 @@ fun TeamScreen(game: GameState, catalog: GameCatalog, onOpenDriver: (String) -> 
                             append(vehicleLabel)
                         }
                     },
-                    value = stringResource(R.string.team_driver_jobs, formatInteger(driver.experienceJobs.toLong(), locale)),
+                    value = pluralStringResource(R.plurals.team_driver_jobs, driver.experienceJobs, formatInteger(driver.experienceJobs.toLong(), locale)),
                     mark = Mark.Team,
                     onClick = { onOpenDriver(driver.id.value) },
                     testTag = TestTags.driver(driver.id.value),

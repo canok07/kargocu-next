@@ -14,12 +14,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.canok.kargotycoon.R
@@ -42,7 +43,7 @@ import com.canok.kargotycoon.ui.format.weightText
 
 @Composable
 fun JobsScreen(game: GameState, catalog: GameCatalog, onOpenOffer: (String) -> Unit) {
-    var tab by rememberSaveable { mutableStateOf(0) }
+    var tab by rememberSaveable { mutableIntStateOf(0) }
     Column(Modifier.fillMaxSize().testTag(TestTags.JOBS_ROOT)) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
@@ -53,7 +54,7 @@ fun JobsScreen(game: GameState, catalog: GameCatalog, onOpenOffer: (String) -> U
             ChoiceChip(tab == 1, stringResource(R.string.jobs_tab_deliveries), { tab = 1 }, testTag = TestTags.JOBS_TAB_DELIVERIES)
             Spacer(Modifier.weight(1f))
             Text(
-                stringResource(R.string.jobs_offer_count, game.offers.size),
+                pluralStringResource(R.plurals.jobs_offer_count, game.offers.size, game.offers.size),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

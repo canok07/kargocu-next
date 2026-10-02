@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.canok.kargotycoon.R
@@ -111,8 +112,9 @@ fun DashboardScreen(
             Text(stringResource(R.string.dashboard_daily_none), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             Text(
-                stringResource(
-                    R.string.dashboard_daily_body,
+                pluralStringResource(
+                    R.plurals.dashboard_daily_body,
+                    lastSummary.completedJobs,
                     formatMoneySigned(lastSummary.revenue.cents, locale),
                     formatMoney(lastSummary.costs.cents, locale),
                     lastSummary.completedJobs,

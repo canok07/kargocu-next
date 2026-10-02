@@ -38,7 +38,7 @@
     <string name="dashboard_stage">Şirket kademesi</string>
     <string name="dashboard_stage_label">Kademe</string>
     <string name="dashboard_stage_value">Kademe %1$d</string>
-    <string name="dashboard_time_hint">Zaman kendi kendine ilerler: 1 gerçek saniye = 1 oyun dakikası. Uygulamadan çıkmak duraklatır.</string>
+    <string name="dashboard_time_hint">Zaman kendi kendine ilerler: 1 gerçek saniye = 1 oyun dakikası. Oyunu yeniden açtığında geçen süre en fazla bir oyun günü uygulanır.</string>
     <string name="dashboard_end_day">Günü bitir</string>
     <string name="end_day_confirm_title">Günü bitir?</string>
     <string name="end_day_confirm_body">Devam eden teslimatlar tamamlanır ve kalan teklifler yok sayılır. Oyun sonraki oyun gününde sürer.</string>
@@ -49,7 +49,10 @@
     <string name="dashboard_go_fleet">Filoyu aç</string>
     <string name="dashboard_daily_title">Son gün özeti</string>
     <string name="dashboard_daily_none">Henüz hiçbir oyun günü kapanmadı.</string>
-    <string name="dashboard_daily_body">Gelir %1$s · Gider %2$s · %3$d iş</string>
+    <plurals name="dashboard_daily_body">
+        <item quantity="one">Gelir %1$s · Gider %2$s · %3$d iş</item>
+        <item quantity="other">Gelir %1$s · Gider %2$s · %3$d iş</item>
+    </plurals>
     <string name="dashboard_last_net_title">Son teslimat</string>
     <string name="dashboard_last_net_value">Net %1$s</string>
     <string name="dashboard_no_completed">Henüz tamamlanan teslimat yok.</string>
@@ -58,7 +61,10 @@
 
     <string name="jobs_tab_offers">Teklifler</string>
     <string name="jobs_tab_deliveries">Teslimatlar</string>
-    <string name="jobs_offer_count">%1$d açık</string>
+    <plurals name="jobs_offer_count">
+        <item quantity="one">%1$d teklif</item>
+        <item quantity="other">%1$d teklif</item>
+    </plurals>
     <string name="jobs_empty_title">Bugünlük teklif kalmadı</string>
     <string name="jobs_empty_body">Yeni teklifler sonraki oyun günü gelir. Aynı gün içinde liste yenilenmez.</string>
     <string name="jobs_offer_subtitle">%1$s · %2$d × %3$s · %4$s</string>
@@ -92,7 +98,7 @@
     <string name="job_accept">İşi kabul et</string>
     <string name="job_offer_missing_title">Teklif artık yok</string>
     <string name="job_offer_missing_body">Bu teklif kabul edildi ya da süresi doldu.</string>
-    <string name="selected">Seçili</string>
+    <string name="choice_selected">Seçili</string>
     <string name="unknown_vehicle">Bilinmeyen araç</string>
     <string name="value_none">—</string>
     <string name="value_calculating">Hesaplanıyor…</string>
@@ -158,7 +164,10 @@
     <string name="team_hire_button">Şoför işe al</string>
     <string name="team_empty_title">Henüz şoför yok</string>
     <string name="team_empty_body">İlk teslimatları kendin sürerek başlayabilirsin.</string>
-    <string name="team_driver_jobs">%1$s iş</string>
+    <plurals name="team_driver_jobs">
+        <item quantity="one">%1$s iş</item>
+        <item quantity="other">%1$s iş</item>
+    </plurals>
 
     <string name="hire_title">Şoför işe al</string>
     <string name="hire_tier_title">Bir seviye seç</string>
@@ -225,7 +234,7 @@
     <string name="company_regions">Açık bölge</string>
     <string name="company_regions_value">%1$d / %2$d</string>
     <string name="company_next_stage">Sonraki kademe</string>
-    <string name="company_next_stage_name">Kademe %1$d koşulları</string>
+    <string name="company_next_stage_name">Kademe %1$d için koşullar</string>
     <string name="company_max_stage">En yüksek kademeye ulaştın.</string>
     <string name="company_requirement_jobs">Tamamlanan iş</string>
     <string name="company_requirement_vehicles">Sahip olunan araç</string>
