@@ -67,7 +67,7 @@
     </plurals>
     <string name="jobs_empty_title">Bugünlük teklif kalmadı</string>
     <string name="jobs_empty_body">Yeni teklifler sonraki oyun günü gelir. Aynı gün içinde liste yenilenmez.</string>
-    <string name="jobs_offer_subtitle">%1$s · %2$d × %3$s · %4$s</string>
+    <string name="jobs_offer_subtitle">%1$s · Adet: %2$d · Toplam: %3$s · %4$s</string>
     <string name="jobs_active_title">Aktif</string>
     <string name="jobs_active_empty">Aktif teslimat yok.</string>
     <string name="jobs_history_title">Geçmiş</string>
@@ -219,6 +219,12 @@
     <string name="region_rhein_main">Ren-Main</string>
     <string name="region_elbe">Elbe Koridoru</string>
 
+    <string name="map_city_essen">Essen</string>
+    <string name="map_city_dortmund">Dortmund</string>
+    <string name="map_city_frankfurt">Frankfurt</string>
+    <string name="map_city_mainz">Mainz</string>
+    <string name="map_city_hamburg">Hamburg</string>
+    <string name="map_city_leipzig">Leipzig</string>
     <string name="location_essen_hub">Essen Deposu</string>
     <string name="location_dortmund_market">Dortmund Pazarı</string>
     <string name="location_frankfurt_terminal">Frankfurt Terminali</string>

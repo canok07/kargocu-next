@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +33,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -109,13 +112,16 @@ fun MapScreen(game: GameState, catalog: GameCatalog) {
             catalog.locations.forEach { location ->
                 val position = MapBoard.position(location.id.value) ?: return@forEach
                 val isUnlocked = location.regionId in unlocked
+                val fullLocationName = locationName(location.id)
                 Box(
                     Modifier
-                        .offset(x = boardWidth * position.x - 24.dp, y = boardHeight * position.y - 24.dp)
-                        .size(48.dp)
+                        .offset(x = boardWidth * position.x - 50.dp, y = boardHeight * position.y - 7.dp)
+                        .width(100.dp)
+                        .height(72.dp)
                         .testTag(TestTags.mapNode(location.id.value))
+                        .semantics { contentDescription = fullLocationName }
                         .clickable { selectedRegion = location.regionId },
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.TopCenter,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
@@ -126,10 +132,10 @@ fun MapScreen(game: GameState, catalog: GameCatalog) {
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            locationName(location.id),
+                            stringResource(position.cityLabel),
                             style = MaterialTheme.typography.labelSmall,
                             color = labelColor,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                         )
@@ -151,7 +157,10 @@ fun MapScreen(game: GameState, catalog: GameCatalog) {
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             catalog.regions.forEach { region ->
                 val isUnlocked = region.id in unlocked
                 ChoiceChip(

@@ -67,7 +67,7 @@
     </plurals>
     <string name="jobs_empty_title">No offers left today</string>
     <string name="jobs_empty_body">New offers arrive on the next game day. There is no same-day reroll.</string>
-    <string name="jobs_offer_subtitle">%1$s · %2$d × %3$s · %4$s</string>
+    <string name="jobs_offer_subtitle">%1$s · Packages: %2$d · Total: %3$s · %4$s</string>
     <string name="jobs_active_title">Active</string>
     <string name="jobs_active_empty">No active delivery.</string>
     <string name="jobs_history_title">History</string>
@@ -219,6 +219,12 @@
     <string name="region_rhein_main">Rhine-Main</string>
     <string name="region_elbe">Elbe Corridor</string>
 
+    <string name="map_city_essen">Essen</string>
+    <string name="map_city_dortmund">Dortmund</string>
+    <string name="map_city_frankfurt">Frankfurt</string>
+    <string name="map_city_mainz">Mainz</string>
+    <string name="map_city_hamburg">Hamburg</string>
+    <string name="map_city_leipzig">Leipzig</string>
     <string name="location_essen_hub">Essen Depot</string>
     <string name="location_dortmund_market">Dortmund Market</string>
     <string name="location_frankfurt_terminal">Frankfurt Terminal</string>
