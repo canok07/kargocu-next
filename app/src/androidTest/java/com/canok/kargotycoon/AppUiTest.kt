@@ -207,6 +207,81 @@ class AppUiTest {
 
     private data class JobSelection(val offerId: String, val vehicleId: VehicleId, val routeId: String, val manual: Boolean)
 
+    @Test
+    fun cancelledAndConfirmedDismissalAndSalePersistOnlyTheirActualCost() {
+        earnUntil(targetCents = 130_000L, minimumJobs = 4, minimumDay = 2)
+        compose.waitUntil(timeoutMillis = 15_000) { session.state.value.notice == null }
+
+        compose.onNodeWithTag(TestTags.NAV_FLEET).performClick()
+        waitForTag(TestTags.FLEET_ROOT)
+        compose.onNodeWithTag(TestTags.FLEET_PURCHASE).performClick()
+        waitForTag(TestTags.PURCHASE_ROOT)
+        compose.onNodeWithTag(TestTags.buySpec("city-van")).performScrollTo().performClick()
+        waitForTag(TestTags.DIALOG_CONFIRM)
+        compose.onNodeWithTag(TestTags.DIALOG_CONFIRM).performClick()
+        compose.waitUntil(timeoutMillis = 15_000) { game().vehicles.any { it.ownership == Ownership.OWNED } }
+        val owned = game().vehicles.single { it.ownership == Ownership.OWNED }
+
+        compose.onNodeWithTag(TestTags.NAV_TEAM).performClick()
+        waitForTag(TestTags.TEAM_ROOT)
+        compose.onNodeWithTag(TestTags.TEAM_HIRE).performClick()
+        waitForTag(TestTags.hireTier("junior"))
+        compose.onNodeWithTag(TestTags.hireTier("junior")).performClick()
+        compose.onNodeWithTag(TestTags.HIRE_NAME).performClick().performTextInput("Ada")
+        compose.onNodeWithTag(TestTags.HIRE_CONFIRM).performScrollTo().performClick()
+        compose.waitUntil(timeoutMillis = 15_000) { game().drivers.size == 1 }
+        waitForTag(TestTags.TEAM_ROOT)
+        val driver = game().drivers.single()
+        compose.onNodeWithTag(TestTags.driver(driver.id.value)).performScrollTo().performClick()
+        waitForTag(TestTags.DRIVER_ROOT)
+
+        val beforeDismissal = game()
+        compose.onNodeWithTag(TestTags.DRIVER_FIRE).performScrollTo().performClick()
+        waitForTag(TestTags.DIALOG_CANCEL)
+        compose.onNodeWithTag(TestTags.DIALOG_CANCEL).performClick()
+        assertEquals(beforeDismissal.drivers, game().drivers)
+        assertEquals(beforeDismissal.money, game().money)
+        assertEquals(beforeDismissal.ledger, game().ledger)
+
+        val expectedDismissal = engine.reduce(game(), GameCommand.FireDriver(SessionController.id(), driver.id)) as GameResult.Applied
+        compose.onNodeWithTag(TestTags.DRIVER_FIRE).performScrollTo().performClick()
+        waitForTag(TestTags.DIALOG_CONFIRM)
+        compose.onNodeWithTag(TestTags.DIALOG_CONFIRM).performClick()
+        compose.waitUntil(timeoutMillis = 15_000) { game().drivers.isEmpty() }
+        assertEquals(expectedDismissal.state.money, game().money)
+        assertEquals(expectedDismissal.state.ledger, game().ledger)
+        waitForTag(TestTags.TEAM_ROOT)
+
+        compose.onNodeWithTag(TestTags.NAV_FLEET).performClick()
+        waitForTag(TestTags.FLEET_ROOT)
+        compose.onNodeWithTag(TestTags.vehicle(owned.id.value)).performScrollTo().performClick()
+        waitForTag(TestTags.VEHICLE_ROOT)
+        val beforeSale = game()
+        compose.onNodeWithTag(TestTags.VEHICLE_SELL).performScrollTo().performClick()
+        waitForTag(TestTags.DIALOG_CANCEL)
+        compose.onNodeWithTag(TestTags.DIALOG_CANCEL).performClick()
+        assertEquals(beforeSale.vehicles, game().vehicles)
+        assertEquals(beforeSale.money, game().money)
+        assertEquals(beforeSale.ledger, game().ledger)
+
+        val expectedSale = engine.reduce(game(), GameCommand.SellVehicle(SessionController.id(), owned.id)) as GameResult.Applied
+        compose.onNodeWithTag(TestTags.VEHICLE_SELL).performScrollTo().performClick()
+        waitForTag(TestTags.DIALOG_CONFIRM)
+        compose.onNodeWithTag(TestTags.DIALOG_CONFIRM).performClick()
+        compose.waitUntil(timeoutMillis = 15_000) { game().vehicles.none { it.id == owned.id } }
+        assertEquals(expectedSale.state.money, game().money)
+        assertEquals(expectedSale.state.ledger, game().ledger)
+        waitForTag(TestTags.FLEET_ROOT)
+
+        val settled = game()
+        runBlocking { session.reopen() }
+        compose.waitUntil(timeoutMillis = 15_000) { session.state.value.mode == SessionMode.PLAYING }
+        assertEquals(settled.money, game().money)
+        assertEquals(settled.vehicles, game().vehicles)
+        assertEquals(settled.drivers, game().drivers)
+        assertEquals(settled.ledger, game().ledger)
+    }
+
     private fun parallelSelections(ownedId: VehicleId, rentalId: VehicleId): Pair<JobSelection, JobSelection>? {
         val state = game()
         for (assignedOffer in state.offers) {

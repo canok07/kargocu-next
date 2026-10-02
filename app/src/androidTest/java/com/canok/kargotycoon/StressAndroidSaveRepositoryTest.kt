@@ -78,7 +78,11 @@ class StressAndroidSaveRepositoryTest {
         assertEquals(SaveWriteResult.Written, repository.write(first, 1))
 
         val obstruction = File(directory, "game.json.new").also { assertTrue(it.mkdir()) }
+        // AtomicFile.openRead removes an empty .new directory. A nonempty one
+        // really obstructs the next write, as it would on a blocked filesystem.
+        File(obstruction, "obstruction").writeText("test-only")
         assertTrue(repository.write(second, 2) is SaveWriteResult.Failed)
+        assertArrayEquals(first, repository.readCandidates().primary)
         assertTrue(obstruction.deleteRecursively())
         assertEquals(SaveWriteResult.Written, repository.write(second, 2))
 

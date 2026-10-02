@@ -115,6 +115,9 @@ class StressSessionControllerTest {
             assertEquals(SaveWriteResult.Written, session.startNewGame(seed = 9))
             val before = session.state.value.game!!
             val obstruction = File(directory, "game.json.new").also { assertTrue(it.mkdir()) }
+            // Keep the obstruction nonempty: AtomicFile.openRead cleans an
+            // empty temporary directory before the attempted write.
+            File(obstruction, "obstruction").writeText("test-only")
             val result = session.dispatch(GameCommand.AdvanceDay(SessionController.id()))
             assertTrue(result is StoreCommandResult.PersistenceFailed)
             assertEquals("failed save must not advance game state", before.gameDay, session.state.value.game!!.gameDay)

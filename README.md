@@ -33,4 +33,12 @@ Kiralık araç bakım hatası görünür ayrı cihazda önce yeniden üretildi; 
 
 Stres testini ayrıca çalıştırmak için: `gradlew :game:stressTest`. Normal `:game:test` ağır stres paketini içermez. Ayrıntılar docs/M12-Stres-Kontrolu-20261002.md içindedir.
 
+## M13 cihaz doğrulaması — 2 Ekim 2026
+
+GitHub yedeğinden aynı ürün kaynağı geri açıldı. Görünür Pixel_10a/API37 emülatöründe yazılım grafiğiyle 31 Android testi geçti (0 hata/başarısız/atlanan); M12'de yalnız derlenen 9 kayıt/session stres testi artık cihazda çalıştırıldı. Yeni UI testi, gerçek teslimatlarla kazanılan para üzerinden araç alımı ve şoför işe alımını; işten çıkarma ve araç satışının iptal/onay, muhasebe ve yeniden açılma sonuçlarını doğruladı.
+
+İlk koşunun iki başarısız testi, Android AtomicFile'ın boş geçici klasörü temizlemesi nedeniyle yazma engeli oluşturamıyordu. Testlerde klasör içine engel dosyası eklenerek gerçek yazma hatası üretildi; beklenen hata/kurtarma kontrolleri korunarak son koşu geçti. Ürün kodunda değişiklik yapılmadı. 20 ağır JVM stres testi yeniden çalıştı; değişmeyen motorun 81 normal test sonucu Gradle önbelleğinden alındı. Debug/test APK ve lint geçti (0 lint hatası, mevcut 1 OldTargetApi uyarısı).
+
+Kullanıcının “testi bitirdikten sonra dur” talimatıyla cihaz koşusu sonrası duruldu. Gerçek 60 dakikalık görünür test başlatılmadı; fiziksel cihaz ve üretim imzası doğrulaması da yoktur. Ayrıntılar docs/M13-Cihaz-Testi-Sonucu.md içindedir.
+
 M0 karar ve kabul belgeleri docs altında tarihsel planı korur. M11 oyun kaynağı m11-verified-20261002 etiketiyle, M12 düzeltmeleri m12-stress-fixes-20261002 etiketiyle kayıtlıdır. Kullanıcı DUR dediğinde yeni çalışma başlatılmaz, aktif işler durdurulur ve testlere devam için açık talimat beklenir.
