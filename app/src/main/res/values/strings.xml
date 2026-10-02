@@ -78,7 +78,7 @@
     <string name="offer_route">Route</string>
     <string name="offer_package">Package</string>
     <string name="offer_load">Load</string>
-    <string name="offer_count_weight">%1$s × %2$s</string>
+    <string name="offer_count_weight">Packages: %1$s · Total: %2$s</string>
     <string name="offer_risk">Risk</string>
     <string name="offer_distance">Distance</string>
     <string name="job_vehicle_title">Choose vehicle</string>

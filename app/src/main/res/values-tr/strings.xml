@@ -78,7 +78,7 @@
     <string name="offer_route">Güzergâh</string>
     <string name="offer_package">Paket</string>
     <string name="offer_load">Yük</string>
-    <string name="offer_count_weight">%1$s × %2$s</string>
+    <string name="offer_count_weight">Adet: %1$s · Toplam: %2$s</string>
     <string name="offer_risk">Risk</string>
     <string name="offer_distance">Mesafe</string>
     <string name="job_vehicle_title">Araç seç</string>
