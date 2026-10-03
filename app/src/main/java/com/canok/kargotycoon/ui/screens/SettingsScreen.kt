@@ -4,10 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +66,7 @@ fun SettingsScreen(
     actionPending: Boolean = false,
 ) {
     var confirmingReset by remember { mutableStateOf(false) }
+    var showingPrivacy by remember { mutableStateOf(false) }
     val settings = game.settings
 
     ScreenBody(Modifier.testTag(TestTags.SETTINGS_ROOT)) {
@@ -98,6 +103,12 @@ fun SettingsScreen(
 
         SectionHeading(stringResource(R.string.settings_data))
         InfoBanner(text = stringResource(R.string.settings_storage_note), mark = Mark.Info)
+        TextButton(
+            onClick = { showingPrivacy = true },
+            modifier = Modifier.fillMaxWidth().testTag("settings_privacy"),
+        ) {
+            Text(stringResource(R.string.privacy_title))
+        }
         Button(
             onClick = { confirmingReset = true },
             enabled = !actionPending,
@@ -105,6 +116,29 @@ fun SettingsScreen(
         ) {
             Text(stringResource(R.string.settings_reset))
         }
+    }
+
+    if (showingPrivacy) {
+        // Resolve before entering the dialog window so the selected game locale survives.
+        val privacyTitle = stringResource(R.string.privacy_title)
+        val privacyBody = stringResource(R.string.privacy_body)
+        val privacyClose = stringResource(R.string.privacy_close)
+        AlertDialog(
+            onDismissRequest = { showingPrivacy = false },
+            modifier = Modifier.testTag("privacy_dialog"),
+            title = { Text(privacyTitle) },
+            text = {
+                Text(
+                    privacyBody,
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showingPrivacy = false }) {
+                    Text(privacyClose)
+                }
+            },
+        )
     }
 
     if (confirmingReset) {

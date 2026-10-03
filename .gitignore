@@ -6,4 +6,7 @@ local.properties
 *.iml
 *.jks
 *.keystore
+*.p12
+private-signing/
+upload-credentials.json
 .DS_Store

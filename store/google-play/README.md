@@ -2,6 +2,8 @@
 
 Bu klasör Google Play için metin ve görsel hazırlık paketidir. Mağazaya yükleme veya yayın yapılmadı. İçerik 0.2.0 / versionCode 3 sürümünü anlatır. Android application ID `com.canok.kargotycoon` ve kayıt biçimi korunmuştur; görünen ad her dilde **Parcelrise Tycoon** olur.
 
+**Güncel yayın teslimi: 0.2.1 / versionCode 4.** Oyun içi gizlilik bilgisi ve özel yükleme anahtarıyla imzalanabilen AAB desteği eklendi; ekonomi/kayıt motoru değişmedi. Arkadaşına teslim ve Console adımları [publication/ONCE-BUNU-OKU.md](publication/ONCE-BUNU-OKU.md) içindedir. Görseller gerçek 0.2.0 sürümünden alınmıştır; yeni gizlilik penceresi haricinde aynı oyunu gösterir. `release.json` ve `assets.json` çekim kaynağına ait 0.2.0 bilgilerini korur; yayın paketinin 0.2.1 bilgileri ayrı `verification.json` dosyasında yer alır.
+
 ## İçerik
 
 - `en-US/` ve `tr-TR/`: başlık, kısa/tam açıklama, bu sürümdeki değişiklikler ve gerçek telefon ekranları.

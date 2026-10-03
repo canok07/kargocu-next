@@ -1,1 +1,1 @@
-Sekiz kademe, yedi bölge ve 14 merkez boyunca şirketini büyüt. Yeni uzman araçları ve yük türlerini kullan, alternatif rotaları seç; ileri hedefler için filonu çeşitlendir. İş gelirleri paket adedi ve toplam ağırlığı daha anlamlı yansıtır. Mevcut kayıtlar ve kabul edilmiş teslimat ödemeleri korunur.
+Sekiz kademe, yedi bölge ve 14 merkez boyunca şirketini uzman araçlar, alternatif rotalar ve büyüyen iş pazarıyla geliştir. Bu sürümde Ayarlar ekranına çevrimdışı gizlilik bilgisi eklendi. Mevcut kayıtlar ve kabul edilmiş teslimat ödemeleri korunur.

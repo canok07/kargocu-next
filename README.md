@@ -1,4 +1,6 @@
-# Parcelrise Tycoon — 0.2.0
+# Parcelrise Tycoon — 0.2.1
+
+0.2.1 / versionCode 4: mağaza yayını için yerelleştirilmiş uygulama içi gizlilik bilgisi, yalnız ortam değişkenlerinden imzalama ve arkadaşına [yayın teslim rehberi](store/google-play/publication/ONCE-BUNU-OKU.md). Oyun motoru ve kayıt şeması 0.2.0 ile aynıdır. İmzalı yayın AAB/APK ve özel yükleme anahtarı kaynak depodan ayrı teslim edilir; üretim yayını veya fiziksel cihaz testi yapılmış sayılmaz.
 
 Sıfırdan geliştirilen Android lojistik oyunu. Eski Kargocu/Courier Rush projeleri yalnız referanstır; bu oyunun kodu, ekranları ve çizimleri yeni oluşturulmuştur.
 

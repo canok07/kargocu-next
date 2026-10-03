@@ -265,6 +265,9 @@
     <string name="settings_tutorial_hint">Adım adım yönlendirmeyi yeniden aç.</string>
     <string name="settings_data">Veri</string>
     <string name="settings_storage_note">Oyunun yalnızca bu cihazda saklanır. Hesap ya da bulut eşitlemesi yoktur.</string>
+    <string name="privacy_title">Gizlilik politikası</string>
+    <string name="privacy_close">Kapat</string>
+    <string name="privacy_body">Parcelrise Tycoon — güncelleme: 3 Ekim 2026.\n\nBu sürüm çevrimdışı çalışır. Yayıncıya kişisel veri toplamaz veya göndermez; üçüncü taraflarla paylaşmaz. Reklam, analiz, hesap, satın alma ve bulut eşitleme hizmetleri içermez.\n\nGirdiğin şirket ve şoför adları, oyun ilerlemesi ve tercihler uygulamanın bu cihazdaki özel alanında saklanır. Bunlar oyun içi etiketlerdir; gerçek kimliğini istemez. Yeni oyun başlattığında kurtarma kopyaları ve arşivlenmiş kayıtlar kalabilir.\n\nTüm yerel kayıtları, kurtarma kopyalarını ve tercihleri kaldırmak için Android Ayarlar üzerinden uygulama depolamasını temizle veya uygulamayı kaldır. Bu işlem ilerlemeni de siler. Uygulama Android bulut yedeklemesini ve cihaz aktarımı yedeklemesini kapatır.\n\nGizlilik soruları için batuhanboran32@gmail.com adresine yaz. Yayıncıya e-posta gönderirsen mesajın ve adresin çevrimdışı oyundan ayrı işlenir. Google Play ve Android kendi politikaları kapsamında bilgi işleyebilir.</string>
     <string name="settings_reset">Yeni oyun başlat</string>
     <string name="reset_confirm_title">Baştan başla?</string>
     <string name="reset_confirm_body">Bu, mevcut oyunun yerine geçer. Mevcut kayıtlar değiştirilmeden önce cihazda arşivlenir.</string>

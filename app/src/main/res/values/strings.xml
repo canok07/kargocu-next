@@ -265,6 +265,9 @@
     <string name="settings_tutorial_hint">Turn the step-by-step guidance back on.</string>
     <string name="settings_data">Data</string>
     <string name="settings_storage_note">Your game is stored only on this device. There is no account or cloud sync.</string>
+    <string name="privacy_title">Privacy policy</string>
+    <string name="privacy_close">Close</string>
+    <string name="privacy_body">Parcelrise Tycoon — updated 3 October 2026.\n\nThis version works offline. It does not collect or transmit personal data to the publisher and does not share it with third parties. There are no advertising, analytics, account, purchase or cloud-sync services.\n\nCompany and driver names you enter, game progress and preferences are stored in the app’s private storage on this device. These are game labels, not a request for your real identity. Recovery copies and archived saves may remain after starting a new game.\n\nTo remove all local saves, recovery copies and preferences, clear the app’s storage in Android Settings or uninstall it. This also removes your progress. The app disables Android cloud backup and device-transfer backup.\n\nFor privacy enquiries, email batuhanboran32@gmail.com. If you email the publisher, your message and address are handled separately from the offline game. Google Play and Android may process information under their own policies.</string>
     <string name="settings_reset">Start a new game</string>
     <string name="reset_confirm_title">Start over?</string>
     <string name="reset_confirm_body">This replaces the current game. Existing saves are archived on the device before they are replaced.</string>

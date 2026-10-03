@@ -15,8 +15,8 @@ android {
         applicationId = "com.canok.kargotycoon"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.2.0"
+        versionCode = 4
+        versionName = "0.2.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -35,8 +35,24 @@ android {
         }
     }
 
+    // Upload credentials are supplied only for publication builds, never committed.
+    val uploadVariables = listOf("PARCELRISE_UPLOAD_STORE", "PARCELRISE_UPLOAD_STORE_PASSWORD", "PARCELRISE_UPLOAD_ALIAS", "PARCELRISE_UPLOAD_KEY_PASSWORD")
+    val uploadValues = uploadVariables.map { System.getenv(it)?.takeIf(String::isNotBlank) }
+    require(uploadValues.all { it == null } || uploadValues.all { it != null }) {
+        "Set all four PARCELRISE_UPLOAD_* signing variables, or leave all unset."
+    }
+    val uploadSigning = if (uploadValues.all { it != null }) {
+        signingConfigs.create("playUpload") {
+            storeFile = file(requireNotNull(uploadValues[0]))
+            storePassword = uploadValues[1]
+            keyAlias = uploadValues[2]
+            keyPassword = uploadValues[3]
+        }
+    } else null
+
     buildTypes {
         release {
+            signingConfig = uploadSigning
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
