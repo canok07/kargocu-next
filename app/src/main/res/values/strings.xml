@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Kargo Tycoon</string>
+    <string name="app_name">Parcelrise Tycoon</string>
     <string name="company_label">YOUR COMPANY</string>
 
     <string name="nav_dashboard">Dashboard</string>
@@ -358,4 +358,5 @@
     <string name="target_region">Unlock %1$s</string>
     <string name="target_first_owned_vehicle">Buy your first own vehicle</string>
     <string name="target_progress">%1$s / %2$s</string>
+    <string name="action_working">Saving…</string>
 </resources>

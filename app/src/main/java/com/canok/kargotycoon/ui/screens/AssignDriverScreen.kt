@@ -23,7 +23,7 @@ import com.canok.kargotycoon.ui.format.formatInteger
 import com.canok.kargotycoon.ui.state.Projections
 
 @Composable
-fun AssignDriverScreen(vehicleId: String, game: GameState, onAssign: (DriverId) -> Unit, onBack: () -> Unit) {
+fun AssignDriverScreen(vehicleId: String, game: GameState, onAssign: (DriverId) -> Unit, onBack: () -> Unit, actionPending: Boolean = false) {
     val locale = currentLocale()
     val candidates = game.drivers.filter { it.status == DriverStatus.AVAILABLE && it.assignedVehicleId == null }
     LazyColumn(Modifier.padding(horizontal = 16.dp).testTag(TestTags.TEAM_ROOT)) {
@@ -42,6 +42,7 @@ fun AssignDriverScreen(vehicleId: String, game: GameState, onAssign: (DriverId) 
                     subtitle = pluralStringResource(R.plurals.team_driver_jobs, driver.experienceJobs, formatInteger(driver.experienceJobs.toLong(), locale)),
                     mark = Mark.Team,
                     onClick = { onAssign(driver.id) },
+                    enabled = !actionPending,
                     testTag = TestTags.driver(driver.id.value),
                 )
             }

@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.canok.kargotycoon.R
 import com.canok.kargotycoon.data.OfferPreview
 import com.canok.kargotycoon.game.domain.GameCatalog
@@ -77,12 +78,13 @@ fun JobOfferScreen(
     var selectedVehicle by rememberSaveable(offerId) { mutableStateOf(vehicles.firstOrNull()?.id?.value) }
     var selectedRoute by rememberSaveable(offerId) { mutableStateOf(offer.routeOptions.firstOrNull()?.value) }
     var manual by rememberSaveable(offerId) { mutableStateOf(true) }
-    var preview by remember { mutableStateOf<OfferPreview?>(null) }
 
     val vehicle = vehicles.firstOrNull { it.id.value == selectedVehicle }
     val assignedDriver = vehicle?.let { Projections.driverForVehicle(game, it) }
     val assignedAvailable = assignedDriver != null
     val effectiveManual = manual || !assignedAvailable
+    var preview by remember(selectedVehicle, selectedRoute, effectiveManual) { mutableStateOf<OfferPreview?>(null) }
+    val actionPending by viewModel.actionPending.collectAsStateWithLifecycle()
 
     LaunchedEffect(selectedVehicle, selectedRoute, effectiveManual, game.revision) {
         if (selectedVehicle == null || selectedRoute == null) {
@@ -185,11 +187,10 @@ fun JobOfferScreen(
                 val vehicleId = selectedVehicle
                 val routeId = selectedRoute
                 if (vehicleId != null && routeId != null) {
-                    viewModel.acceptJob(OfferId(offerId), VehicleId(vehicleId), RouteId(routeId), effectiveManual)
+                    viewModel.acceptJob(OfferId(offerId), VehicleId(vehicleId), RouteId(routeId), effectiveManual, onBack)
                 }
-                onBack()
             },
-            enabled = preview?.rejection == null && preview != null,
+            enabled = preview?.rejection == null && preview?.invoice != null && vehicle != null && !actionPending,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp).testTag(TestTags.JOB_ACCEPT),
         ) {
             Text(stringResource(R.string.job_accept))

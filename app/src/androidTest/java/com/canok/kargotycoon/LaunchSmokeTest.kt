@@ -15,7 +15,7 @@ class LaunchSmokeTest {
 
     @Test
     fun launcherRendersTheNewApplication() {
-        compose.onNodeWithText("Kargo Tycoon").assertIsDisplayed()
+        compose.onNodeWithText("Parcelrise Tycoon").assertIsDisplayed()
     }
 }
 

@@ -1,0 +1,81 @@
+{
+  "seed": 20261003,
+  "speedMultiplier": 100,
+  "criterion": "highest company stage and every catalog region unlocked",
+  "strategy": "automatic legal job selection by payout; buy up to two owned vehicles with 200 EUR buffer, hire and assign drivers, repair and maintain idle fleet; no injected funds, catalog changes or AdvanceDay",
+  "realElapsedMillis": 129885,
+  "gameElapsedMillis": 778026000,
+  "normalClockEquivalentMillis": 12967100,
+  "gameDay": 10,
+  "stage": 4,
+  "completedJobs": 28,
+  "ownedVehicles": 2,
+  "drivers": 2,
+  "regions": 3,
+  "balanceCents": 50446,
+  "maxParallelJobs": 2,
+  "appliedCommands": 1042,
+  "uniquePaidJobs": 28,
+  "milestones": [
+    {
+      "realMillis": 64,
+      "gameDay": 1,
+      "stage": 1,
+      "completedJobs": 0
+    },
+    {
+      "realMillis": 14457,
+      "gameDay": 2,
+      "stage": 2,
+      "completedJobs": 4
+    },
+    {
+      "realMillis": 28892,
+      "gameDay": 3,
+      "stage": 2,
+      "completedJobs": 6
+    },
+    {
+      "realMillis": 43351,
+      "gameDay": 4,
+      "stage": 2,
+      "completedJobs": 9
+    },
+    {
+      "realMillis": 57751,
+      "gameDay": 5,
+      "stage": 3,
+      "completedJobs": 13
+    },
+    {
+      "realMillis": 72083,
+      "gameDay": 6,
+      "stage": 3,
+      "completedJobs": 17
+    },
+    {
+      "realMillis": 86580,
+      "gameDay": 7,
+      "stage": 3,
+      "completedJobs": 18
+    },
+    {
+      "realMillis": 101072,
+      "gameDay": 8,
+      "stage": 4,
+      "completedJobs": 22
+    },
+    {
+      "realMillis": 115338,
+      "gameDay": 9,
+      "stage": 4,
+      "completedJobs": 26
+    },
+    {
+      "realMillis": 129784,
+      "gameDay": 10,
+      "stage": 4,
+      "completedJobs": 28
+    }
+  ]
+}

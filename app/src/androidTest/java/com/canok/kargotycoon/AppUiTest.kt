@@ -14,6 +14,8 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.lifecycle.ViewModelProvider
+import com.canok.kargotycoon.data.Notice
 import com.canok.kargotycoon.data.SessionController
 import com.canok.kargotycoon.data.SessionMode
 import com.canok.kargotycoon.game.domain.Ownership
@@ -23,7 +25,10 @@ import com.canok.kargotycoon.game.engine.GameCommand
 import com.canok.kargotycoon.game.engine.GameEngine
 import com.canok.kargotycoon.game.engine.GameResult
 import com.canok.kargotycoon.ui.TestTags
+import com.canok.kargotycoon.viewmodel.GameViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.io.File
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -61,6 +66,76 @@ class AppUiTest {
     private fun nodeCount(tag: String): Int = compose.onAllNodesWithTag(tag).fetchSemanticsNodes().size
 
     private fun game() = requireNotNull(session.state.value.game)
+
+    private fun confirm() {
+        compose.waitUntil(timeoutMillis = 15_000) {
+            runCatching { compose.onNodeWithTag(TestTags.DIALOG_CONFIRM).assertIsEnabled() }.isSuccess
+        }
+        compose.onNodeWithTag(TestTags.DIALOG_CONFIRM).performClick()
+    }
+
+    @Test
+    fun repeatedEndDayIntentCannotSkipTwoDaysWhileTheFirstIsSaving() {
+        val before = game().gameDay
+        compose.runOnIdle {
+            val model = ViewModelProvider(compose.activity)[GameViewModel::class.java]
+            model.endDay()
+            model.endDay()
+        }
+        compose.waitUntil(timeoutMillis = 15_000) { game().gameDay > before }
+        compose.waitForIdle()
+        assertEquals(before + 1, game().gameDay)
+    }
+
+    @Test
+    fun confirmedResetReturnsToDashboardWithTheInitialBalance() {
+        val beforeSeed = game().randomSeed
+        compose.onNodeWithTag(TestTags.NAV_MORE).performClick()
+        waitForTag(TestTags.MORE_ROOT)
+        compose.onNodeWithTag(TestTags.MORE_SETTINGS).performClick()
+        waitForTag(TestTags.SETTINGS_ROOT)
+        compose.onNodeWithTag(TestTags.SETTINGS_RESET).performScrollTo().performClick()
+        confirm()
+        compose.waitUntil(timeoutMillis = 15_000) { game().randomSeed != beforeSeed }
+        waitForTag(TestTags.DASHBOARD_ROOT)
+        assertEquals(10_000L, game().money.cents)
+        assertEquals(1, game().gameDay)
+        compose.onNodeWithTag(TestTags.TUTORIAL_BANNER).assertIsDisplayed()
+    }
+
+    @Test
+    fun failedPurchaseSaveKeepsThePurchaseScreenAndExistingFleet() {
+        earnUntil(targetCents = 130_000L, minimumJobs = 4, minimumDay = 2)
+        compose.waitUntil(timeoutMillis = 15_000) { session.state.value.notice == null }
+        session.setForeground(false)
+        runBlocking {
+            delay(300)
+            session.dispatch(GameCommand.AdvanceTime(SessionController.id(), 0))
+        }
+        compose.onNodeWithTag(TestTags.NAV_FLEET).performClick()
+        waitForTag(TestTags.FLEET_ROOT)
+        compose.onNodeWithTag(TestTags.FLEET_PURCHASE).performClick()
+        waitForTag(TestTags.PURCHASE_ROOT)
+        compose.onNodeWithTag(TestTags.buySpec("city-van")).performScrollTo().performClick()
+        waitForTag(TestTags.DIALOG_CONFIRM)
+        val before = game()
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val obstruction = File(context.filesDir, "saves/game.json.new")
+        assertTrue(obstruction.mkdir())
+        File(obstruction, "obstruction").writeText("test-only")
+        try {
+            confirm()
+            compose.waitUntil(timeoutMillis = 15_000) { session.state.value.notice == Notice.SAVING_FAILED }
+            compose.waitForIdle()
+            compose.onNodeWithTag(TestTags.PURCHASE_ROOT).assertIsDisplayed()
+            assertEquals(before.money, game().money)
+            assertEquals(before.vehicles, game().vehicles)
+        } finally {
+            check(obstruction.deleteRecursively())
+            runBlocking { session.reopen() }
+            session.setForeground(true)
+        }
+    }
 
     @Test
     fun launcherKeepsTheApplicationTitleVisible() {
@@ -120,7 +195,7 @@ class AppUiTest {
     fun endingTheDayRequiresConfirmationAndAdvancesTheCalendar() {
         compose.onNodeWithTag(TestTags.DASHBOARD_END_DAY).performScrollTo().performClick()
         waitForTag(TestTags.DIALOG_CONFIRM)
-        compose.onNodeWithTag(TestTags.DIALOG_CONFIRM).performClick()
+        confirm()
         compose.waitUntil(timeoutMillis = 15_000) { game().gameDay >= 2 }
     }
 
@@ -155,7 +230,7 @@ class AppUiTest {
         waitForTag(TestTags.PURCHASE_ROOT)
         compose.onNodeWithTag(TestTags.buySpec("city-van")).performScrollTo().performClick()
         waitForTag(TestTags.DIALOG_CONFIRM)
-        compose.onNodeWithTag(TestTags.DIALOG_CONFIRM).performClick()
+        confirm()
         compose.waitUntil(timeoutMillis = 15_000) { game().vehicles.any { it.ownership == Ownership.OWNED } }
 
         compose.onNodeWithTag(TestTags.NAV_TEAM).performClick()
@@ -218,7 +293,7 @@ class AppUiTest {
         waitForTag(TestTags.PURCHASE_ROOT)
         compose.onNodeWithTag(TestTags.buySpec("city-van")).performScrollTo().performClick()
         waitForTag(TestTags.DIALOG_CONFIRM)
-        compose.onNodeWithTag(TestTags.DIALOG_CONFIRM).performClick()
+        confirm()
         compose.waitUntil(timeoutMillis = 15_000) { game().vehicles.any { it.ownership == Ownership.OWNED } }
         val owned = game().vehicles.single { it.ownership == Ownership.OWNED }
 
@@ -246,10 +321,12 @@ class AppUiTest {
         val expectedDismissal = engine.reduce(game(), GameCommand.FireDriver(SessionController.id(), driver.id)) as GameResult.Applied
         compose.onNodeWithTag(TestTags.DRIVER_FIRE).performScrollTo().performClick()
         waitForTag(TestTags.DIALOG_CONFIRM)
-        compose.onNodeWithTag(TestTags.DIALOG_CONFIRM).performClick()
+        confirm()
         compose.waitUntil(timeoutMillis = 15_000) { game().drivers.isEmpty() }
         assertEquals(expectedDismissal.state.money, game().money)
-        assertEquals(expectedDismissal.state.ledger, game().ledger)
+        // A foreground clock tick may occur between the quote and confirmation;
+        // compare the financial entries while allowing their real booking time.
+        assertEquals(expectedDismissal.state.ledger.map { it.copy(at = com.canok.kargotycoon.game.domain.GameInstant(0)) }, game().ledger.map { it.copy(at = com.canok.kargotycoon.game.domain.GameInstant(0)) })
         waitForTag(TestTags.TEAM_ROOT)
 
         compose.onNodeWithTag(TestTags.NAV_FLEET).performClick()
@@ -267,10 +344,10 @@ class AppUiTest {
         val expectedSale = engine.reduce(game(), GameCommand.SellVehicle(SessionController.id(), owned.id)) as GameResult.Applied
         compose.onNodeWithTag(TestTags.VEHICLE_SELL).performScrollTo().performClick()
         waitForTag(TestTags.DIALOG_CONFIRM)
-        compose.onNodeWithTag(TestTags.DIALOG_CONFIRM).performClick()
+        confirm()
         compose.waitUntil(timeoutMillis = 15_000) { game().vehicles.none { it.id == owned.id } }
         assertEquals(expectedSale.state.money, game().money)
-        assertEquals(expectedSale.state.ledger, game().ledger)
+        assertEquals(expectedSale.state.ledger.map { it.copy(at = com.canok.kargotycoon.game.domain.GameInstant(0)) }, game().ledger.map { it.copy(at = com.canok.kargotycoon.game.domain.GameInstant(0)) })
         waitForTag(TestTags.FLEET_ROOT)
 
         val settled = game()

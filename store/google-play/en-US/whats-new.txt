@@ -1,0 +1,1 @@
+Meet the Parcelrise Tycoon name and emblem. Actions now finish after progress is saved, with more reliable double-tap handling and simultaneous settings changes. Cost confirmations, new-game navigation and the large-text welcome screen have been improved.

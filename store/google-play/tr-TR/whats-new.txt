@@ -1,0 +1,1 @@
+Yeni Parcelrise Tycoon adı ve amblemi. İşlemler kayıt tamamlandıktan sonra sonuçlanır; çift dokunma ve eşzamanlı ayar değişiklikleri daha güvenilir çalışır. İş maliyeti onayları, yeni oyun geçişi ve büyük yazıda açılış ekranı iyileştirildi.

@@ -1,5 +1,6 @@
 package com.canok.kargotycoon.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.canok.kargotycoon.R
 import com.canok.kargotycoon.ui.TestTags
@@ -40,19 +42,20 @@ import com.canok.kargotycoon.ui.components.Mark
 import com.canok.kargotycoon.ui.components.Rule
 
 @Composable
-private fun LaunchFrame(content: @Composable ColumnScope.() -> Unit) {
+private fun LaunchFrame(footer: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
     Box(
         Modifier.fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .safeDrawingPadding(),
     ) {
+        Column(Modifier.fillMaxSize()) {
         Column(
-            Modifier.fillMaxSize()
+            Modifier.weight(1f).fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp, vertical = 28.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                KargoMark(Mark.Parcel, Modifier.size(26.dp), tint = MaterialTheme.colorScheme.tertiary)
+                Image(painterResource(R.drawable.ic_launcher), contentDescription = null, modifier = Modifier.size(34.dp))
                 Spacer(Modifier.width(10.dp))
                 Text(stringResource(R.string.company_label), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
@@ -66,6 +69,10 @@ private fun LaunchFrame(content: @Composable ColumnScope.() -> Unit) {
             Rule(color = MaterialTheme.colorScheme.outline)
             Spacer(Modifier.height(22.dp))
             content()
+        }
+        if (footer != null) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 16.dp)) { footer() }
+        }
         }
     }
 }
@@ -92,8 +99,18 @@ fun LaunchScreen() {
 }
 
 @Composable
-fun WelcomeScreen(languageTag: String, onLanguageChange: (String) -> Unit, onNewGame: () -> Unit) {
-    LaunchFrame {
+fun WelcomeScreen(languageTag: String, onLanguageChange: (String) -> Unit, onNewGame: () -> Unit, actionPending: Boolean = false) {
+    LaunchFrame(footer = {
+        Button(
+            onClick = onNewGame,
+            enabled = !actionPending,
+            modifier = Modifier.fillMaxWidth().testTag(TestTags.WELCOME_NEW_GAME),
+        ) {
+            KargoMark(Mark.Advance, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onPrimary)
+            Spacer(Modifier.width(10.dp))
+            Text(stringResource(if (actionPending) R.string.action_working else R.string.welcome_new_game))
+        }
+    }) {
         Text(stringResource(R.string.welcome_label), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
         Spacer(Modifier.height(10.dp))
         Text(stringResource(R.string.welcome_title), style = MaterialTheme.typography.headlineLarge)
@@ -102,15 +119,6 @@ fun WelcomeScreen(languageTag: String, onLanguageChange: (String) -> Unit, onNew
         Spacer(Modifier.height(28.dp))
         LanguageChooser(languageTag, onLanguageChange)
         Spacer(Modifier.height(28.dp))
-        Button(
-            onClick = onNewGame,
-            modifier = Modifier.fillMaxWidth().testTag(TestTags.WELCOME_NEW_GAME),
-        ) {
-            KargoMark(Mark.Advance, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onPrimary)
-            Spacer(Modifier.width(10.dp))
-            Text(stringResource(R.string.welcome_new_game))
-        }
-        Spacer(Modifier.height(12.dp))
         Text(stringResource(R.string.welcome_new_game_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
@@ -123,6 +131,7 @@ fun RecoveryScreen(
     onLanguageChange: (String) -> Unit,
     onRecover: () -> Unit,
     onNewGame: () -> Unit,
+    actionPending: Boolean = false,
 ) {
     var confirmingNewGame by remember { mutableStateOf(false) }
     LaunchFrame {
@@ -139,12 +148,12 @@ fun RecoveryScreen(
         LanguageChooser(languageTag, onLanguageChange)
         Spacer(Modifier.height(24.dp))
         if (canRecover) {
-            Button(onClick = onRecover, modifier = Modifier.fillMaxWidth().testTag(TestTags.WELCOME_RECOVER)) {
+            Button(onClick = onRecover, enabled = !actionPending, modifier = Modifier.fillMaxWidth().testTag(TestTags.WELCOME_RECOVER)) {
                 Text(stringResource(R.string.recovery_restore))
             }
             Spacer(Modifier.height(8.dp))
         }
-        TextButton(onClick = { confirmingNewGame = true }, modifier = Modifier.fillMaxWidth().testTag(TestTags.WELCOME_NEW_GAME)) {
+        TextButton(onClick = { confirmingNewGame = true }, enabled = !actionPending, modifier = Modifier.fillMaxWidth().testTag(TestTags.WELCOME_NEW_GAME)) {
             Text(stringResource(R.string.recovery_new_game))
         }
     }
@@ -162,7 +171,7 @@ fun RecoveryScreen(
 }
 
 @Composable
-fun ReadErrorScreen(onRetry: () -> Unit) {
+fun ReadErrorScreen(onRetry: () -> Unit, actionPending: Boolean = false) {
     LaunchFrame {
         KargoMark(Mark.Alert, Modifier.size(30.dp), tint = MaterialTheme.colorScheme.error)
         Spacer(Modifier.height(12.dp))
@@ -170,7 +179,7 @@ fun ReadErrorScreen(onRetry: () -> Unit) {
         Spacer(Modifier.height(10.dp))
         Text(stringResource(R.string.read_error_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
-        Button(onClick = onRetry, modifier = Modifier.fillMaxWidth().testTag(TestTags.WELCOME_RETRY)) {
+        Button(onClick = onRetry, enabled = !actionPending, modifier = Modifier.fillMaxWidth().testTag(TestTags.WELCOME_RETRY)) {
             Text(stringResource(R.string.read_error_retry))
         }
     }

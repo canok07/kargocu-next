@@ -59,6 +59,7 @@ fun SettingsScreen(
     onHaptics: (Boolean) -> Unit,
     onTutorial: (Boolean) -> Unit,
     onReset: () -> Unit,
+    actionPending: Boolean = false,
 ) {
     var confirmingReset by remember { mutableStateOf(false) }
     val settings = game.settings
@@ -99,6 +100,7 @@ fun SettingsScreen(
         InfoBanner(text = stringResource(R.string.settings_storage_note), mark = Mark.Info)
         Button(
             onClick = { confirmingReset = true },
+            enabled = !actionPending,
             modifier = Modifier.fillMaxWidth().testTag(TestTags.SETTINGS_RESET),
         ) {
             Text(stringResource(R.string.settings_reset))
@@ -112,6 +114,7 @@ fun SettingsScreen(
             confirmLabel = stringResource(R.string.reset_confirm_action),
             cancelLabel = stringResource(R.string.action_cancel),
             destructive = true,
+            confirmEnabled = !actionPending,
             onConfirm = { confirmingReset = false; onReset() },
             onDismiss = { confirmingReset = false },
         )

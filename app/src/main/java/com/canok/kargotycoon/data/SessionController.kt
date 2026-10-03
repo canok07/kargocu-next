@@ -63,7 +63,11 @@ class SessionController(
     fun retryOpen() { scope.launch { reopen() } }
     fun newGame(languageTag: String? = null) { scope.launch { startNewGame(clock(), languageTag) } }
     fun recover() { scope.launch { confirmRecovery() } }
-    fun clearNotice() { mutableState.update { it.copy(notice = null) } }
+    fun clearNotice(sequence: Long? = null) {
+        mutableState.update { if (sequence == null || it.noticeSequence == sequence) it.copy(notice = null) else it }
+    }
+
+    suspend fun createNewGame(languageTag: String): SaveWriteResult = startNewGame(clock(), languageTag)
 
     suspend fun reopen(): StoreOpenResult = operations.withLock {
         mutableState.update { it.copy(mode = SessionMode.LOADING) }
@@ -118,11 +122,20 @@ class SessionController(
         result
     }
 
-    suspend fun dispatch(command: GameCommand): StoreCommandResult = operations.withLock {
-        if (state.value.mode != SessionMode.PLAYING) return@withLock StoreCommandResult.RecoveryConfirmationRequired
+    suspend fun dispatch(command: GameCommand): StoreCommandResult = operations.withLock { dispatchLocked(command) }
+
+    /** Patch only the chosen setting against the latest committed state. */
+    suspend fun updateSettings(transform: (GameSettings) -> GameSettings): StoreCommandResult = operations.withLock {
+        val current = state.value.game?.settings
+            ?: return@withLock StoreCommandResult.RecoveryConfirmationRequired
+        dispatchLocked(GameCommand.ChangeSettings(id(), transform(current)))
+    }
+
+    private suspend fun dispatchLocked(command: GameCommand): StoreCommandResult {
+        if (state.value.mode != SessionMode.PLAYING) return StoreCommandResult.RecoveryConfirmationRequired
         val result = store!!.dispatch(command)
         publish(result)
-        result
+        return result
     }
 
     suspend fun preview(offerId: OfferId, vehicleId: VehicleId, routeId: RouteId, manual: Boolean): OfferPreview = withContext(Dispatchers.Default) {

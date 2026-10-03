@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="36" failures="0" errors="0" skipped="0" time="0.000" timestamp="2026-10-03T05:55:33" hostname="localhost">
+  <testsuite name="com.canok.kargotycoon.AndroidSaveRepositoryTest" tests="9" failures="0" errors="0" skipped="0" time="0.397" timestamp="2026-10-03T05:55:33" hostname="localhost">
+    <properties>
+      <property name="device" value="emulator-5554" />
+    </properties>
+    <testcase name="explicitNewGameArchivesBothPreviousCandidates" classname="com.canok.kargotycoon.AndroidSaveRepositoryTest" time="0.085" />
+    <testcase name="unknownFutureSaveCannotBeOverwrittenWithoutPreservation" classname="com.canok.kargotycoon.AndroidSaveRepositoryTest" time="0.014" />
+    <testcase name="staleAndConcurrentWritesCannotRegressDiskRevision" classname="com.canok.kargotycoon.AndroidSaveRepositoryTest" time="0.174" />
+    <testcase name="abandonedWriterIsRecoveredWithoutACompletionCallback" classname="com.canok.kargotycoon.AndroidSaveRepositoryTest" time="0.010" />
+    <testcase name="corruptPrimaryIsArchivedBeforeLastGoodRecovery" classname="com.canok.kargotycoon.AndroidSaveRepositoryTest" time="0.033" />
+    <testcase name="oversizedInputIsBoundedAndOriginalCanStillBeArchived" classname="com.canok.kargotycoon.AndroidSaveRepositoryTest" time="0.035" />
+    <testcase name="preservationDoesNotAuthorizeOverwritingADifferentFutureFile" classname="com.canok.kargotycoon.AndroidSaveRepositoryTest" time="0.012" />
+    <testcase name="primaryAndLastGoodSurviveRepositoryRecreation" classname="com.canok.kargotycoon.AndroidSaveRepositoryTest" time="0.022" />
+    <testcase name="interruptedAtomicWriteKeepsPreviousCommittedSave" classname="com.canok.kargotycoon.AndroidSaveRepositoryTest" time="0.012" />
+  </testsuite>
+  <testsuite name="com.canok.kargotycoon.AppUiTest" tests="11" failures="0" errors="0" skipped="0" time="48.835" timestamp="2026-10-03T05:55:33" hostname="localhost">
+    <properties>
+      <property name="device" value="emulator-5554" />
+    </properties>
+    <testcase name="confirmedResetReturnsToDashboardWithTheInitialBalance" classname="com.canok.kargotycoon.AppUiTest" time="5.103" />
+    <testcase name="acceptsAFeasibleOfferWithARealEngineAcceptance" classname="com.canok.kargotycoon.AppUiTest" time="3.212" />
+    <testcase name="endingTheDayRequiresConfirmationAndAdvancesTheCalendar" classname="com.canok.kargotycoon.AppUiTest" time="2.224" />
+    <testcase name="launcherKeepsTheApplicationTitleVisible" classname="com.canok.kargotycoon.AppUiTest" time="1.547" />
+    <testcase name="failedPurchaseSaveKeepsThePurchaseScreenAndExistingFleet" classname="com.canok.kargotycoon.AppUiTest" time="7.066" />
+    <testcase name="languageChangePersistsThroughTheEngine" classname="com.canok.kargotycoon.AppUiTest" time="2.193" />
+    <testcase name="repeatedEndDayIntentCannotSkipTwoDaysWhileTheFirstIsSaving" classname="com.canok.kargotycoon.AppUiTest" time="1.853" />
+    <testcase name="bottomNavigationReachesEveryPrimarySection" classname="com.canok.kargotycoon.AppUiTest" time="2.882" />
+    <testcase name="cancelledAndConfirmedDismissalAndSalePersistOnlyTheirActualCost" classname="com.canok.kargotycoon.AppUiTest" time="10.595" />
+    <testcase name="completesParallelCareerJourneyUsingOnlyRealEngineCommands" classname="com.canok.kargotycoon.AppUiTest" time="10.268" />
+    <testcase name="tutorialDismissesThroughTheEngineAndReappearsFromSettings" classname="com.canok.kargotycoon.AppUiTest" time="1.892" />
+  </testsuite>
+  <testsuite name="com.canok.kargotycoon.LaunchSmokeTest" tests="1" failures="0" errors="0" skipped="0" time="1.314" timestamp="2026-10-03T05:55:33" hostname="localhost">
+    <properties>
+      <property name="device" value="emulator-5554" />
+    </properties>
+    <testcase name="launcherRendersTheNewApplication" classname="com.canok.kargotycoon.LaunchSmokeTest" time="1.314" />
+  </testsuite>
+  <testsuite name="com.canok.kargotycoon.OrchestratorDeviceCareerTest" tests="1" failures="0" errors="0" skipped="0" time="4.621" timestamp="2026-10-03T05:55:33" hostname="localhost">
+    <properties>
+      <property name="device" value="emulator-5554" />
+    </properties>
+    <testcase name="careerAndParallelContractsSurviveDeviceSessionRecreation" classname="com.canok.kargotycoon.OrchestratorDeviceCareerTest" time="4.621" />
+  </testsuite>
+  <testsuite name="com.canok.kargotycoon.SessionPersistenceTest" tests="5" failures="0" errors="0" skipped="0" time="4.300" timestamp="2026-10-03T05:55:33" hostname="localhost">
+    <properties>
+      <property name="device" value="emulator-5554" />
+    </properties>
+    <testcase name="failedSaveStopsAutomaticRetriesUntilExplicitReopen" classname="com.canok.kargotycoon.SessionPersistenceTest" time="4.076" />
+    <testcase name="futureSaveRequiresAnExplicitPreservingNewGame" classname="com.canok.kargotycoon.SessionPersistenceTest" time="0.032" />
+    <testcase name="dismissingAnOlderNoticeCannotEraseTheNewerNotice" classname="com.canok.kargotycoon.SessionPersistenceTest" time="0.019" />
+    <testcase name="inFlightDeliveryReopensAndCannotPayTwice" classname="com.canok.kargotycoon.SessionPersistenceTest" time="0.101" />
+    <testcase name="concurrentSettingPatchesPreserveEveryChangedFieldOnReopen" classname="com.canok.kargotycoon.SessionPersistenceTest" time="0.072" />
+  </testsuite>
+  <testsuite name="com.canok.kargotycoon.StressAndroidSaveRepositoryTest" tests="5" failures="0" errors="0" skipped="0" time="4.662" timestamp="2026-10-03T05:55:33" hostname="localhost">
+    <properties>
+      <property name="device" value="emulator-5554" />
+    </properties>
+    <testcase name="competingWritesNeverRegressDiskRevision" classname="com.canok.kargotycoon.StressAndroidSaveRepositoryTest" time="0.493" />
+    <testcase name="manySerialSavesKeepExactRevisionAndRollingBackup" classname="com.canok.kargotycoon.StressAndroidSaveRepositoryTest" time="3.932" />
+    <testcase name="reopenLoopsAreStableAndCheap" classname="com.canok.kargotycoon.StressAndroidSaveRepositoryTest" time="0.187" />
+    <testcase name="corruptPrimaryKeepsLastGoodAndPreservationEnablesRecovery" classname="com.canok.kargotycoon.StressAndroidSaveRepositoryTest" time="0.030" />
+    <testcase name="blockedThenInterruptedWritesRecoverToLastCommittedSave" classname="com.canok.kargotycoon.StressAndroidSaveRepositoryTest" time="0.020" />
+  </testsuite>
+  <testsuite name="com.canok.kargotycoon.StressSessionControllerTest" tests="4" failures="0" errors="0" skipped="0" time="6.095" timestamp="2026-10-03T05:55:33" hostname="localhost">
+    <properties>
+      <property name="device" value="emulator-5554" />
+    </properties>
+    <testcase name="concurrentDispatchesSerializeWithoutCorruptingState" classname="com.canok.kargotycoon.StressSessionControllerTest" time="0.678" />
+    <testcase name="blockedWritesPausePersistenceAndRecoverOnReopen" classname="com.canok.kargotycoon.StressSessionControllerTest" time="0.062" />
+    <testcase name="inFlightDeliverySurvivesReopensAndPaysExactlyOnce" classname="com.canok.kargotycoon.StressSessionControllerTest" time="0.573" />
+    <testcase name="commandStreamWithReopensKeepsRevisionMonotonicAndMoneyConserved" classname="com.canok.kargotycoon.StressSessionControllerTest" time="4.782" />
+  </testsuite>
+</testsuites>

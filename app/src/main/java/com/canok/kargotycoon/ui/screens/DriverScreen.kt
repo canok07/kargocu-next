@@ -14,12 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.canok.kargotycoon.R
 import com.canok.kargotycoon.game.domain.DriverId
 import com.canok.kargotycoon.game.domain.DriverStatus
 import com.canok.kargotycoon.game.domain.GameCatalog
 import com.canok.kargotycoon.game.domain.GameState
-import com.canok.kargotycoon.game.domain.Money
+import com.canok.kargotycoon.game.engine.GameResult
 import com.canok.kargotycoon.ui.TestTags
 import com.canok.kargotycoon.ui.components.ConfirmDialog
 import com.canok.kargotycoon.ui.components.EmptyState
@@ -32,6 +33,7 @@ import com.canok.kargotycoon.ui.format.currentLocale
 import com.canok.kargotycoon.ui.format.driverStatusName
 import com.canok.kargotycoon.ui.format.formatInteger
 import com.canok.kargotycoon.ui.format.formatMoney
+import com.canok.kargotycoon.ui.format.rejectionText
 import com.canok.kargotycoon.ui.format.tierName
 import com.canok.kargotycoon.ui.format.vehicleName
 import com.canok.kargotycoon.ui.state.Projections
@@ -66,9 +68,11 @@ fun DriverScreen(
     val busy = driver.status != DriverStatus.AVAILABLE || game.activeJobs.any { it.driverId == driver.id }
 
     var confirmingFire by remember { mutableStateOf(false) }
-    var severance by remember { mutableStateOf<Money?>(null) }
+    var firePreview by remember(confirmingFire) { mutableStateOf<GameResult?>(null) }
+    val actionPending by viewModel.actionPending.collectAsStateWithLifecycle()
     LaunchedEffect(confirmingFire, game.revision) {
-        severance = if (confirmingFire) viewModel.previewFire(driver.id).driverSeverance() else null
+        firePreview = null
+        firePreview = if (confirmingFire) viewModel.previewFire(driver.id) else null
     }
 
     ScreenBody(Modifier.testTag(TestTags.DRIVER_ROOT)) {
@@ -85,25 +89,27 @@ fun DriverScreen(
         SectionHeading(stringResource(R.string.vehicle_actions))
         OutlinedButton(
             onClick = { viewModel.unassignDriver(driver.id) },
-            enabled = driver.assignedVehicleId != null && !busy,
+            enabled = driver.assignedVehicleId != null && !busy && !actionPending,
             modifier = Modifier.fillMaxWidth().testTag(TestTags.DRIVER_UNASSIGN),
         ) { Text(stringResource(R.string.driver_unassign)) }
         Button(
             onClick = { confirmingFire = true },
-            enabled = !busy,
+            enabled = !busy && !actionPending,
             modifier = Modifier.fillMaxWidth().testTag(TestTags.DRIVER_FIRE),
         ) { Text(stringResource(R.string.driver_fire)) }
     }
 
     if (confirmingFire) {
+        val severance = firePreview.driverSeverance()
         val costText = severance?.let { formatMoney(it.cents, locale) } ?: stringResource(R.string.value_calculating)
         ConfirmDialog(
             title = stringResource(R.string.fire_confirm_title),
-            message = stringResource(R.string.fire_confirm_body, driver.name, costText),
+            message = rejectionText((firePreview as? GameResult.Rejected)?.reason) ?: stringResource(R.string.fire_confirm_body, driver.name, costText),
             confirmLabel = stringResource(R.string.driver_fire),
             cancelLabel = stringResource(R.string.action_cancel),
             destructive = true,
-            onConfirm = { viewModel.fireDriver(driver.id); confirmingFire = false; onBack() },
+            confirmEnabled = severance != null && !busy && !actionPending,
+            onConfirm = { viewModel.fireDriver(driver.id, onBack); confirmingFire = false },
             onDismiss = { confirmingFire = false },
         )
     }

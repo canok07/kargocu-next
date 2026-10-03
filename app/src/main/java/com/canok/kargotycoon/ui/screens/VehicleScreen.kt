@@ -14,11 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.canok.kargotycoon.R
 import com.canok.kargotycoon.game.domain.GameCatalog
 import com.canok.kargotycoon.game.domain.GameState
-import com.canok.kargotycoon.game.domain.Money
 import com.canok.kargotycoon.game.domain.VehicleId
+import com.canok.kargotycoon.game.engine.GameResult
 import com.canok.kargotycoon.ui.TestTags
 import com.canok.kargotycoon.ui.components.ConfirmDialog
 import com.canok.kargotycoon.ui.components.EmptyState
@@ -34,6 +35,7 @@ import com.canok.kargotycoon.ui.format.formatInteger
 import com.canok.kargotycoon.ui.format.formatMoney
 import com.canok.kargotycoon.ui.format.formatPercent
 import com.canok.kargotycoon.ui.format.ownershipName
+import com.canok.kargotycoon.ui.format.rejectionText
 import com.canok.kargotycoon.ui.format.vehicleName
 import com.canok.kargotycoon.ui.format.vehicleStatusName
 import com.canok.kargotycoon.ui.format.weightText
@@ -71,13 +73,15 @@ fun VehicleScreen(
     val spec = Projections.specOf(catalog, vehicle)
     val driver = Projections.driverForVehicle(game, vehicle)
     var action by remember { mutableStateOf<VehicleAction?>(null) }
-    var price by remember { mutableStateOf<Money?>(null) }
+    var preview by remember(action) { mutableStateOf<GameResult?>(null) }
+    val actionPending by viewModel.actionPending.collectAsStateWithLifecycle()
 
     LaunchedEffect(action, game.revision) {
-        price = when (action) {
-            VehicleAction.Repair -> viewModel.previewRepair(vehicle.id).vehicleRepairCost()
-            VehicleAction.Maintain -> viewModel.previewMaintain(vehicle.id).vehicleMaintenanceCost()
-            VehicleAction.Sell -> viewModel.previewSell(vehicle.id).vehicleSaleProceeds()
+        preview = null
+        preview = when (action) {
+            VehicleAction.Repair -> viewModel.previewRepair(vehicle.id)
+            VehicleAction.Maintain -> viewModel.previewMaintain(vehicle.id)
+            VehicleAction.Sell -> viewModel.previewSell(vehicle.id)
             null -> null
         }
     }
@@ -122,23 +126,23 @@ fun VehicleScreen(
         SectionHeading(stringResource(R.string.vehicle_actions))
         Button(
             onClick = { action = VehicleAction.Repair },
-            enabled = canRepair,
+            enabled = canRepair && !actionPending,
             modifier = Modifier.fillMaxWidth().testTag(TestTags.VEHICLE_REPAIR),
         ) { Text(stringResource(R.string.vehicle_repair)) }
         OutlinedButton(
             onClick = { action = VehicleAction.Maintain },
-            enabled = canMaintain,
+            enabled = canMaintain && !actionPending,
             modifier = Modifier.fillMaxWidth().testTag(TestTags.VEHICLE_MAINTAIN),
         ) { Text(stringResource(R.string.vehicle_maintain)) }
         OutlinedButton(
             onClick = { action = VehicleAction.Sell },
-            enabled = canSell,
+            enabled = canSell && !actionPending,
             modifier = Modifier.fillMaxWidth().testTag(TestTags.VEHICLE_SELL),
         ) { Text(stringResource(R.string.vehicle_sell)) }
         if (driver == null) {
             OutlinedButton(
                 onClick = onOpenAssign,
-                enabled = !busy,
+                enabled = !busy && !actionPending,
                 modifier = Modifier.fillMaxWidth().testTag(TestTags.VEHICLE_ASSIGN_DRIVER),
             ) { Text(stringResource(R.string.vehicle_assign_driver)) }
         }
@@ -146,6 +150,11 @@ fun VehicleScreen(
 
     val currentAction = action
     if (currentAction != null) {
+        val price = when (currentAction) {
+            VehicleAction.Repair -> preview.vehicleRepairCost()
+            VehicleAction.Maintain -> preview.vehicleMaintenanceCost()
+            VehicleAction.Sell -> preview.vehicleSaleProceeds()
+        }
         val costText = price?.let { formatMoney(it.cents, locale) } ?: stringResource(R.string.value_calculating)
         val titleRes = when (currentAction) {
             VehicleAction.Repair -> R.string.repair_confirm_title
@@ -159,7 +168,7 @@ fun VehicleScreen(
         }
         ConfirmDialog(
             title = stringResource(titleRes),
-            message = stringResource(bodyRes, costText),
+            message = rejectionText((preview as? GameResult.Rejected)?.reason) ?: stringResource(bodyRes, costText),
             confirmLabel = when (currentAction) {
                 VehicleAction.Repair -> stringResource(R.string.vehicle_repair)
                 VehicleAction.Maintain -> stringResource(R.string.vehicle_maintain)
@@ -167,11 +176,12 @@ fun VehicleScreen(
             },
             cancelLabel = stringResource(R.string.action_cancel),
             destructive = currentAction == VehicleAction.Sell,
+            confirmEnabled = price != null && !actionPending,
             onConfirm = {
                 when (currentAction) {
                     VehicleAction.Repair -> viewModel.repairVehicle(vehicle.id)
                     VehicleAction.Maintain -> viewModel.maintainVehicle(vehicle.id)
-                    VehicleAction.Sell -> { viewModel.sellVehicle(vehicle.id); onBack() }
+                    VehicleAction.Sell -> viewModel.sellVehicle(vehicle.id, onBack)
                 }
                 action = null
             },

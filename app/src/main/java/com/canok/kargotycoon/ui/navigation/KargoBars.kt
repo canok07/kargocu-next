@@ -1,5 +1,6 @@
 package com.canok.kargotycoon.ui.navigation
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.canok.kargotycoon.R
@@ -69,6 +71,8 @@ fun KargoTopBar(title: String, canGoBack: Boolean, onBack: () -> Unit) {
                 }
             } else {
                 Spacer(Modifier.width(12.dp))
+                Image(painterResource(R.drawable.ic_launcher), contentDescription = null, modifier = Modifier.size(34.dp))
+                Spacer(Modifier.width(10.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(

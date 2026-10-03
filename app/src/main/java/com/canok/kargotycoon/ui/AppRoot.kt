@@ -17,6 +17,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -66,6 +67,7 @@ import java.util.Locale
 @Composable
 fun KargoApp(viewModel: GameViewModel = viewModel()) {
     val sessionState by viewModel.state.collectAsStateWithLifecycle()
+    val actionPending by viewModel.actionPending.collectAsStateWithLifecycle()
     var welcomeLanguage by rememberSaveable { mutableStateOf(defaultWelcomeLanguage()) }
     val language = sessionState.game?.settings?.languageTag ?: welcomeLanguage
 
@@ -80,6 +82,7 @@ fun KargoApp(viewModel: GameViewModel = viewModel()) {
                     languageTag = welcomeLanguage,
                     onLanguageChange = { welcomeLanguage = it },
                     onNewGame = { viewModel.startNewGame(welcomeLanguage) },
+                    actionPending = actionPending,
                 )
                 SessionMode.RECOVERY -> RecoveryScreen(
                     futureSave = sessionState.futureSave,
@@ -88,8 +91,9 @@ fun KargoApp(viewModel: GameViewModel = viewModel()) {
                     onLanguageChange = { welcomeLanguage = it },
                     onRecover = { viewModel.recover() },
                     onNewGame = { viewModel.startNewGame(welcomeLanguage) },
+                    actionPending = actionPending,
                 )
-                SessionMode.READ_ERROR -> ReadErrorScreen(onRetry = { viewModel.retryOpen() })
+                SessionMode.READ_ERROR -> ReadErrorScreen(onRetry = { viewModel.retryOpen() }, actionPending = actionPending)
                 SessionMode.PLAYING -> sessionState.game?.let { game ->
                     PlayingScaffold(viewModel, game)
                 } ?: LaunchScreen()
@@ -142,7 +146,7 @@ private fun SessionNotices(viewModel: GameViewModel, notice: Notice?, noticeSequ
             withDismissAction = notice != Notice.SAVING_FAILED,
             duration = if (notice == Notice.SAVING_FAILED) SnackbarDuration.Indefinite else SnackbarDuration.Short,
         )
-        viewModel.clearNotice()
+        viewModel.clearNotice(noticeSequence)
         if (result == SnackbarResult.ActionPerformed && notice == Notice.SAVING_FAILED) viewModel.retryOpen()
     }
     SnackbarHost(snackbarHostState, modifier)
@@ -152,6 +156,13 @@ private fun SessionNotices(viewModel: GameViewModel, notice: Notice?, noticeSequ
 private fun PlayingScaffold(viewModel: GameViewModel, game: GameState) {
     val stack = rememberSaveable(saver = BackStackSaver) { androidx.compose.runtime.mutableStateListOf(Route.Dashboard) }
     val navigator = remember(stack) { Navigator(stack) }
+    var navigationSeed by rememberSaveable { mutableLongStateOf(game.randomSeed) }
+    LaunchedEffect(game.randomSeed) {
+        if (navigationSeed != game.randomSeed) {
+            navigator.selectTab(Route.Dashboard)
+            navigationSeed = game.randomSeed
+        }
+    }
     val feedback = com.canok.kargotycoon.ui.feedback.rememberKargoFeedback(game.settings.soundEnabled, game.settings.hapticsEnabled)
     BackHandler(enabled = navigator.canGoBack) { navigator.back() }
 
@@ -183,6 +194,7 @@ private fun PlayingScaffold(viewModel: GameViewModel, game: GameState) {
 @Composable
 private fun ScreenHost(viewModel: GameViewModel, game: GameState, navigator: Navigator) {
     val catalog = viewModel.catalog
+    val actionPending by viewModel.actionPending.collectAsStateWithLifecycle()
     when (val route = navigator.current) {
         Route.Dashboard -> DashboardScreen(
             game = game,
@@ -217,8 +229,9 @@ private fun ScreenHost(viewModel: GameViewModel, game: GameState, navigator: Nav
         is Route.AssignDriver -> AssignDriverScreen(
             vehicleId = route.vehicleId,
             game = game,
-            onAssign = { driverId -> viewModel.assignDriver(driverId, com.canok.kargotycoon.game.domain.VehicleId(route.vehicleId)); navigator.back() },
+            onAssign = { driverId -> viewModel.assignDriver(driverId, com.canok.kargotycoon.game.domain.VehicleId(route.vehicleId)) { navigator.back() } },
             onBack = { navigator.back() },
+            actionPending = actionPending,
         )
         Route.Team -> TeamScreen(
             game = game,
@@ -243,11 +256,12 @@ private fun ScreenHost(viewModel: GameViewModel, game: GameState, navigator: Nav
         Route.Company -> CompanyScreen(game = game, catalog = catalog)
         Route.Settings -> SettingsScreen(
             game = game,
-            onLanguage = { viewModel.changeSettings(game.settings.copy(languageTag = it)) },
-            onSound = { viewModel.changeSettings(game.settings.copy(soundEnabled = it)) },
-            onHaptics = { viewModel.changeSettings(game.settings.copy(hapticsEnabled = it)) },
+            onLanguage = { viewModel.setLanguage(it) },
+            onSound = { viewModel.setSound(it) },
+            onHaptics = { viewModel.setHaptics(it) },
             onTutorial = { viewModel.setTutorialDismissed(!it) },
             onReset = { viewModel.startNewGame(game.settings.languageTag) },
+            actionPending = actionPending,
         )
     }
 }

@@ -14,6 +14,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import java.util.concurrent.atomic.AtomicLong
 import org.junit.Assert.*
 import org.junit.Test
@@ -23,6 +25,50 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class SessionPersistenceTest {
+    @Test fun concurrentSettingPatchesPreserveEveryChangedFieldOnReopen() = runBlocking {
+        val directory = directory()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val session = SessionController(directory, clock = { 7_000 }, scope = scope)
+            assertEquals(SaveWriteResult.Written, session.startNewGame(seed = 9, languageTag = "tr"))
+            val results = listOf(
+                async(Dispatchers.Default) { session.updateSettings { it.copy(languageTag = "en") } },
+                async(Dispatchers.Default) { session.updateSettings { it.copy(soundEnabled = false) } },
+                async(Dispatchers.Default) { session.updateSettings { it.copy(hapticsEnabled = false) } },
+            ).awaitAll()
+            assertTrue(results.all { it is StoreCommandResult.Applied })
+            val expected = GameSettings(languageTag = "en", soundEnabled = false, hapticsEnabled = false)
+            assertEquals(expected, session.state.value.game!!.settings)
+            assertTrue(session.reopen() is StoreOpenResult.Ready)
+            assertEquals(expected, session.state.value.game!!.settings)
+        } finally {
+            scope.cancel()
+            directory.deleteRecursively()
+        }
+    }
+
+    @Test fun dismissingAnOlderNoticeCannotEraseTheNewerNotice() = runBlocking {
+        val directory = directory()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val session = SessionController(directory, clock = { 7_000 }, scope = scope)
+            assertEquals(SaveWriteResult.Written, session.startNewGame(seed = 9))
+            session.dispatch(GameCommand.SellVehicle(SessionController.id(), VehicleId("vehicle-1")))
+            val oldSequence = session.state.value.noticeSequence
+            session.dispatch(GameCommand.RepairVehicle(SessionController.id(), VehicleId("vehicle-1")))
+            val latest = session.state.value
+            assertTrue(latest.noticeSequence > oldSequence)
+            assertNotNull(latest.notice)
+            session.clearNotice(oldSequence)
+            assertEquals(latest.notice, session.state.value.notice)
+            assertEquals(latest.noticeSequence, session.state.value.noticeSequence)
+            session.clearNotice(latest.noticeSequence)
+            assertNull(session.state.value.notice)
+        } finally {
+            scope.cancel()
+            directory.deleteRecursively()
+        }
+    }
     @Test fun failedSaveStopsAutomaticRetriesUntilExplicitReopen() = runBlocking {
         val directory = directory()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

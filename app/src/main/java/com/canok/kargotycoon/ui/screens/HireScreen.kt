@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.canok.kargotycoon.R
 import com.canok.kargotycoon.game.domain.GameCatalog
 import com.canok.kargotycoon.game.domain.GameState
@@ -36,6 +37,8 @@ fun HireScreen(game: GameState, catalog: GameCatalog, viewModel: GameViewModel, 
     var name by rememberSaveable { mutableStateOf("") }
     val tier = catalog.driverTiers.firstOrNull { it.id.value == selectedTier }
     val levelOk = tier == null || level >= tier.minimumCompanyLevel
+    val affordable = tier != null && game.money >= tier.hiringCost
+    val actionPending by viewModel.actionPending.collectAsStateWithLifecycle()
 
     ScreenBody {
         SectionHeading(stringResource(R.string.hire_tier_title))
@@ -68,13 +71,15 @@ fun HireScreen(game: GameState, catalog: GameCatalog, viewModel: GameViewModel, 
             Text(stringResource(R.string.hire_name_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
-        TextButton(
+        if (tier != null && !affordable) {
+            Text(stringResource(R.string.notice_not_enough_money), color = MaterialTheme.colorScheme.error)
+        }
+        Button(
             onClick = {
-                val chosen = tier ?: return@TextButton
-                viewModel.hireDriver(chosen.id, name.trim())
-                onBack()
+                val chosen = tier ?: return@Button
+                viewModel.hireDriver(chosen.id, name.trim(), onBack)
             },
-            enabled = tier != null && name.isNotBlank() && levelOk,
+            enabled = tier != null && name.isNotBlank() && levelOk && affordable && !actionPending,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp).testTag(TestTags.HIRE_CONFIRM),
         ) {
             Text(stringResource(R.string.hire_action))

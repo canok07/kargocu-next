@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -31,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canok.kargotycoon.ui.theme.NumericStyle
@@ -114,7 +116,7 @@ fun LedgerRow(
             }
             if (value != null) {
                 Spacer(Modifier.width(12.dp))
-                Text(value, style = NumericStyle, color = if (enabled) valueColor else MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value, modifier = Modifier.widthIn(max = 144.dp), textAlign = TextAlign.End, style = NumericStyle, color = if (enabled) valueColor else MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         if (divider) Rule()
@@ -126,7 +128,7 @@ fun KeyValueRow(label: String, value: String, modifier: Modifier = Modifier, val
     Row(modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.Top) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
         Spacer(Modifier.width(12.dp))
-        Text(value, style = NumericStyle, color = valueColor)
+        Text(value, modifier = Modifier.weight(1f), textAlign = TextAlign.End, style = NumericStyle, color = valueColor)
     }
 }
 
@@ -228,6 +230,7 @@ fun ConfirmDialog(
     cancelLabel: String,
     modifier: Modifier = Modifier,
     destructive: Boolean = false,
+    confirmEnabled: Boolean = true,
     extra: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     val feedback = com.canok.kargotycoon.ui.feedback.LocalKargoFeedback.current
@@ -245,7 +248,7 @@ fun ConfirmDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { feedback.confirm(); onConfirm() }, modifier = Modifier.testTag(com.canok.kargotycoon.ui.TestTags.DIALOG_CONFIRM)) {
+            TextButton(onClick = { feedback.confirm(); onConfirm() }, enabled = confirmEnabled, modifier = Modifier.testTag(com.canok.kargotycoon.ui.TestTags.DIALOG_CONFIRM)) {
                 Text(confirmLabel, color = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
             }
         },

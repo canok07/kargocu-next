@@ -1,4 +1,4 @@
-# Kargo Tycoon — 0.1.0
+# Parcelrise Tycoon — 0.1.1
 
 Sıfırdan geliştirilen Android lojistik oyunu. Eski Kargocu/Courier Rush projeleri yalnız referanstır; bu oyunun kodu, ekranları ve çizimleri yeni oluşturulmuştur.
 
@@ -7,6 +7,8 @@ Oyuncu 100 EUR ve kendi sürdüğü kiralık panelvanla başlar. İş kabulü, m
 Zaman: 1 gerçek saniye = 1 oyun dakikası. Yeniden açılışta geçen süre en fazla bir oyun günü uygulanır; çevrimdışında yeni iş otomatik kabul edilmez.
 
 ## Açma ve çalıştırma
+
+M14 marka ve APK doğrulaması: 81 normal + 20 ağır motor testi, 36 Android testi ve ayrı bir görünür 100× endgame ölçümü geçti. Ayrıntılar [M14 sonucu](docs/M14-Sonuc.md), mağaza dosyaları [Google Play hazırlığı](store/google-play/README.md) içinde. 0.1.1, yeni ekonomi/kariyer genişletmesinin doğrulanmış ara checkpoint'idir.
 
 Android Studio'da bu proje klasörünü aç, Gradle JDK olarak desteklenen Studio JBR'yi seç, senkronizasyonu tamamla ve app yapılandırmasını çalıştır. Windows doğrulaması Studio JBR 25 ile yapıldı; varsayılan Java 8 kullanılmamalıdır.
 

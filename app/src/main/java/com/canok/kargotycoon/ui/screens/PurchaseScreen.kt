@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.canok.kargotycoon.R
 import com.canok.kargotycoon.game.domain.GameCatalog
 import com.canok.kargotycoon.game.domain.GameState
@@ -39,6 +40,7 @@ fun PurchaseScreen(game: GameState, catalog: GameCatalog, viewModel: GameViewMod
     val level = game.companyLevel(catalog)
     val specs = remember(game.revision) { Projections.purchasableSpecs(catalog, game) }
     var confirming by remember { mutableStateOf<VehicleSpec?>(null) }
+    val actionPending by viewModel.actionPending.collectAsStateWithLifecycle()
 
     LazyColumn(Modifier.fillMaxWidth().testTag(TestTags.PURCHASE_ROOT).padding(horizontal = 16.dp)) {
         if (specs.isEmpty()) {
@@ -86,7 +88,13 @@ fun PurchaseScreen(game: GameState, catalog: GameCatalog, viewModel: GameViewMod
             message = stringResource(R.string.purchase_confirm_body, vehicleName(target), formatMoney(target.purchasePrice.cents, locale)),
             confirmLabel = stringResource(R.string.purchase_action),
             cancelLabel = stringResource(R.string.action_cancel),
-            onConfirm = { viewModel.purchaseVehicle(target.id); confirming = null; onBack() },
+            confirmEnabled = !actionPending && game.money >= target.purchasePrice && level >= target.minimumCompanyLevel,
+            extra = {
+                if (game.money < target.purchasePrice) {
+                    Text(stringResource(R.string.notice_not_enough_money), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            onConfirm = { viewModel.purchaseVehicle(target.id, onBack); confirming = null },
             onDismiss = { confirming = null },
         )
     }
