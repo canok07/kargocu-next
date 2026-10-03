@@ -478,7 +478,9 @@ class GameEngine(
     ): JobInvoice {
         val packageType = catalog.packageTypes.first { it.id == offer.packageTypeId }
         val distance = Money(Math.multiplyExact(route.distanceMeters / 1_000L, catalog.economy.distanceRewardCentsPerKilometer))
-        val base = packageType.baseReward + Money(Math.multiplyExact(offer.count.toLong(), 150L))
+        val parcelReward = Money(Math.multiplyExact(offer.count.toLong(), catalog.economy.parcelRewardCents))
+        val weightReward = Money(Math.multiplyExact(offer.totalWeightGrams / 1_000L, catalog.economy.weightRewardCentsPerKilogram))
+        val base = packageType.baseReward + parcelReward + weightReward
         val riskBonus = (base + distance).percentage(risk.rewardBasisPoints)
         val fuel = Money(Math.multiplyExact(route.distanceMeters / 1_000L, vehicle.fuelCentsPerKilometer))
         val rental = if (ownership == Ownership.RENTAL) Money(catalog.economy.rentalCentsPerJob) else Money.ZERO
