@@ -140,6 +140,7 @@ class GameEngine(
         val nextLevel = catalog.progression.levels.firstOrNull { it.level > level }
         val nextVehicle = catalog.vehicles.filterNot { it.rental }.filter { it.minimumCompanyLevel <= level }.minByOrNull { it.purchasePrice.cents }
         return buildList {
+            if (nextLevel != null && nextLevel.minimumDistinctVehicleSpecs > 0) add(NextTargetProjection("vehicle-types", state.distinctOwnedVehicleSpecs().toLong(), nextLevel.minimumDistinctVehicleSpecs.toLong()))
             if (nextLevel != null) add(NextTargetProjection("company-level-${nextLevel.level}", state.progression.completedJobs.toLong(), nextLevel.minimumCompletedJobs.toLong()))
             if (nextVehicle != null) add(NextTargetProjection("vehicle-${nextVehicle.id.value}", state.money.cents, nextVehicle.purchasePrice.cents))
             catalog.regions.firstOrNull { it.id !in state.progression.unlockedRegionIds }?.let { add(NextTargetProjection("region-${it.id.value}", state.progression.completedJobs.toLong(), it.minimumCompletedJobs.toLong())) }
@@ -281,11 +282,16 @@ class GameEngine(
         val unlockedLocations = catalog.locations.filter { it.regionId in state.progression.unlockedRegionIds }.map { it.id }.toSet()
         val routes = catalog.routes.filter { it.originId in unlockedLocations && it.destinationId in unlockedLocations }
         if (routes.isEmpty()) return null
-        var offers = List(catalog.economy.offersPerDay) { index ->
+        val level = state.companyLevel(catalog)
+        val packages = catalog.packageTypes.filter { it.minimumCompanyLevel <= level }
+        if (packages.isEmpty()) return null
+        val offerCount = (catalog.economy.offersPerDay + (state.progression.unlockedRegionIds.size - 1).coerceAtLeast(0) * catalog.economy.offersPerUnlockedRegion + (level - 1) * catalog.economy.offersPerCompanyLevel).coerceAtMost(catalog.economy.maximumOffersPerDay)
+        val parcelCount = 6 + (level - 1) * catalog.economy.parcelsPerCompanyLevel
+        var offers = List(offerCount) { index ->
             val route = routes[pick(state.randomSeed, counter++, routes.size)]
-            val packageType = catalog.packageTypes[pick(state.randomSeed, counter++, catalog.packageTypes.size)]
+            val packageType = packages[pick(state.randomSeed, counter++, packages.size)]
             val risk = catalog.risks[pick(state.randomSeed, counter++, catalog.risks.size)]
-            val count = 1 + pick(state.randomSeed, counter++, 6)
+            val count = 1 + pick(state.randomSeed, counter++, parcelCount)
             val unitWeightRange = (packageType.maxWeightGrams - packageType.minWeightGrams + 1).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
             val unitWeight = packageType.minWeightGrams + pick(state.randomSeed, counter++, unitWeightRange)
             JobOffer(
@@ -295,7 +301,7 @@ class GameEngine(
                 Math.multiplyExact(unitWeight, count.toLong()),
                 route.originId,
                 route.destinationId,
-                listOf(route.id),
+                routes.filter { it.originId == route.originId && it.destinationId == route.destinationId && it.requiredCapabilities == route.requiredCapabilities }.map { it.id },
                 packageType.capabilities + route.requiredCapabilities,
                 risk.id,
                 state.gameTime.plusMillis(Math.multiplyExact(catalog.economy.offerLifetimeGameMinutes.toLong(), MINUTE_MILLIS)),
@@ -510,7 +516,7 @@ class GameEngine(
     }
 
     private fun unlockRegions(state: GameState): GameState {
-        val unlocked = catalog.regions.filter { state.progression.completedJobs >= it.minimumCompletedJobs && state.vehicles.count { vehicle -> vehicle.ownership == Ownership.OWNED } >= it.minimumOwnedVehicles && state.gameDay >= it.minimumGameDay }.map { it.id }.toSet()
+        val unlocked = catalog.regions.filter { state.progression.completedJobs >= it.minimumCompletedJobs && state.vehicles.count { vehicle -> vehicle.ownership == Ownership.OWNED } >= it.minimumOwnedVehicles && state.gameDay >= it.minimumGameDay && state.distinctOwnedVehicleSpecs() >= it.minimumDistinctVehicleSpecs }.map { it.id }.toSet()
         return state.copy(progression = state.progression.copy(unlockedRegionIds = state.progression.unlockedRegionIds + unlocked))
     }
 

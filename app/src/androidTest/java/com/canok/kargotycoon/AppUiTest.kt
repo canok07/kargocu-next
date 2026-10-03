@@ -5,9 +5,12 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
@@ -161,6 +164,19 @@ class AppUiTest {
         waitForTag(TestTags.MAP_ROOT)
         compose.onNodeWithTag(TestTags.BACK).performClick()
         waitForTag(TestTags.MORE_ROOT)
+    }
+
+    @Test
+    fun expandedMapShowsTheFinalRegionAndItsFleetDiversityRequirement() {
+        compose.onNodeWithTag(TestTags.NAV_MORE).performClick()
+        waitForTag(TestTags.MORE_ROOT)
+        compose.onNodeWithTag(TestTags.MORE_MAP).performClick()
+        waitForTag(TestTags.MAP_ROOT)
+        compose.onNodeWithTag(TestTags.mapNode("freiburg-hub")).performScrollTo().performClick()
+        compose.onNodeWithText("Distinct owned vehicle types").performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText("0 / 6").onFirst().assertIsDisplayed()
+        compose.onNodeWithText("Freiburg Hub", substring = true).performScrollTo().assertIsDisplayed()
+        assertEquals(1, game().progression.unlockedRegionIds.size)
     }
 
     @Test

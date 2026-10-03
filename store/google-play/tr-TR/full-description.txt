@@ -3,13 +3,13 @@ Küçük bir başlangıçtan büyüyen bir kargo şirketine.
 Parcelrise Tycoon, teslimat kararları ve şirket yönetimi üzerine kurulu bir lojistik oyunudur. 100 euro ve kendi sürdüğün kiralık panelvanla başla. İşleri seç, masrafları hesapla ve kazancını şirketinin geleceğine yatır.
 
 HER TESLİMAT BİR KARAR
-Kargo adedini, paket ağırlığını ve rotayı belirle. İşe başlamadan önce beklenen geliri, gideri ve riski gör. Aracının kapasitesine ve bütçene uygun işleri üstlen, teslimatlar tamamlandığında ödemelerini takip et.
+İş seçerken kargo adedini, toplam ağırlığı ve rotaları karşılaştır. İşe başlamadan önce beklenen geliri, gideri ve riski gör. Aracının kapasitesine ve bütçene uygun işleri üstlen, teslimatlar tamamlandığında ödemelerini takip et.
 
 FİLONU VE EKİBİNİ BÜYÜT
 Araç satın al, sat, onar ve bakımını yaptır. Şoför işe alıp araçlara ata; ekibin büyüdükçe aynı anda birden fazla teslimatı yönet. Araç ve personel giderlerini dengede tut.
 
 ŞİRKETİNİN YOLUNU ÇİZ
-Şirket hedeflerinde ilerle ve yeni bölgelerin kilidini aç. Almanya temalı şematik haritada merkezleri ve rotaları incele. Gelir ve gider kayıtlarıyla verdiğin kararların sonuçlarını gör.
+Sekiz şirket kademesi ve yedi bölgede büyü. Almanya temalı şematik haritada 14 merkezi ve 22 rotayı incele. Başlangıçtaki kiralık araç dahil dokuz araç türü; standart paketlerden tıbbi malzemeye ve endüstriyel makinelere kadar sekiz yük kategorisini taşır. İleri hedefler için filonu çeşitlendir; şirketin geliştikçe iş pazarı büyür. Gelir ve gider kayıtlarıyla verdiğin kararların sonuçlarını gör.
 
 KENDİ TEMPONDA OYNA
 Öğreticiyle ilk teslimatını öğren. Türkçe veya İngilizce oyna. İnternet bağlantısı gerekmeden devam et; ilerlemen cihazında kaydedilir. Oyuna döndüğünde geçen süre sınırlı olarak işlenir, yeni işler kendiliğinden kabul edilmez.

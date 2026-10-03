@@ -28,7 +28,19 @@ dependencies {
 tasks.named<Test>("test") {
     filter {
         excludeTestsMatching("com.canok.kargotycoon.game.stress.*")
+        excludeTestsMatching("com.canok.kargotycoon.game.career.*")
     }
+}
+
+tasks.register<Test>("careerBalanceTest") {
+    group = "verification"
+    description = "Opt-in seeded career pacing and economic reachability campaign."
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    filter { includeTestsMatching("com.canok.kargotycoon.game.career.*") }
+    maxHeapSize = "2g"
+    systemProperty("career.metrics.dir", layout.buildDirectory.dir("career-metrics").get().asFile.absolutePath)
+    outputs.upToDateWhen { false }
 }
 
 // Dedicated, deterministic, opt-in JVM stress campaign (engine + persistence).

@@ -25,6 +25,7 @@ import com.canok.kargotycoon.ui.theme.NumericStyle
 fun targetLabel(target: String, catalog: GameCatalog): String = when {
     target.startsWith("company-level-") ->
         stringResource(R.string.target_company_level, target.removePrefix("company-level-").toIntOrNull() ?: 0)
+    target == "vehicle-types" -> stringResource(R.string.target_vehicle_types)
     target.startsWith("vehicle-") -> {
         val specId = target.removePrefix("vehicle-")
         val name = catalog.vehicles.firstOrNull { it.id.value == specId }?.let { vehicleName(it) } ?: specId

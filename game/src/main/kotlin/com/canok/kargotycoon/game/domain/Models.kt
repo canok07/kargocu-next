@@ -155,7 +155,8 @@ data class GameState(
     val settings: GameSettings = GameSettings(),
     val processedCommandIds: List<CommandId> = emptyList(),
 ) {
+    fun distinctOwnedVehicleSpecs(): Int = vehicles.filter { it.ownership == Ownership.OWNED }.map { it.specId }.toSet().size
     fun companyLevel(catalog: GameCatalog): Int = catalog.progression.levels
-        .filter { progression.completedJobs >= it.minimumCompletedJobs && vehicles.count { vehicle -> vehicle.ownership == Ownership.OWNED } >= it.minimumOwnedVehicles && drivers.size >= it.minimumDrivers && gameDay >= it.minimumGameDay }
+        .filter { progression.completedJobs >= it.minimumCompletedJobs && vehicles.count { vehicle -> vehicle.ownership == Ownership.OWNED } >= it.minimumOwnedVehicles && drivers.size >= it.minimumDrivers && gameDay >= it.minimumGameDay && distinctOwnedVehicleSpecs() >= it.minimumDistinctVehicleSpecs }
         .maxOfOrNull { it.level } ?: 1
 }

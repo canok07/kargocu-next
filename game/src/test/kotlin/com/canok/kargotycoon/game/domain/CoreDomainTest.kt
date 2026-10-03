@@ -18,7 +18,7 @@ class CoreDomainTest {
     fun bundledCatalogIsValidAndStarterJobIsFeasible() {
         val catalog = DefaultCatalog.value
         assertTrue(CatalogValidator.validate(catalog).isEmpty())
-        assertEquals(3, catalog.regions.size)
+        assertEquals(7, catalog.regions.size)
         val starter = catalog.vehicles.single { it.id == catalog.starterVehicleSpecId }
         assertTrue(starter.rental)
         assertTrue(catalog.packageTypes.any { it.minWeightGrams <= starter.capacityGrams && it.capabilities.all(starter.capabilities::contains) })

@@ -25,6 +25,11 @@ private fun res(id: String): Int = when (id) {
     "city-van" -> R.string.vehicle_city_van
     "cool-box" -> R.string.vehicle_cool_box
     "cargo-truck" -> R.string.vehicle_cargo_truck
+    "long-van" -> R.string.vehicle_long_van
+    "cold-rig" -> R.string.vehicle_cold_rig
+    "freight-rig" -> R.string.vehicle_freight_rig
+    "all-rounder" -> R.string.vehicle_all_rounder
+    "euro-hauler" -> R.string.vehicle_euro_hauler
     else -> 0
 }
 
@@ -44,6 +49,10 @@ fun packageName(type: PackageType): String = when (type.id.value) {
     "glass" -> stringResource(R.string.package_glass)
     "fresh" -> stringResource(R.string.package_fresh)
     "chemical" -> stringResource(R.string.package_chemical)
+    "electronics" -> stringResource(R.string.package_electronics)
+    "medical" -> stringResource(R.string.package_medical)
+    "bulk" -> stringResource(R.string.package_bulk)
+    "machinery" -> stringResource(R.string.package_machinery)
     else -> type.name
 }
 
@@ -66,6 +75,10 @@ fun regionName(id: RegionId): String = when (id.value) {
     "ruhr" -> stringResource(R.string.region_ruhr)
     "rhein-main" -> stringResource(R.string.region_rhein_main)
     "elbe" -> stringResource(R.string.region_elbe)
+    "danube" -> stringResource(R.string.region_danube)
+    "north-sea" -> stringResource(R.string.region_north_sea)
+    "berlin" -> stringResource(R.string.region_berlin)
+    "alpine" -> stringResource(R.string.region_alpine)
     else -> id.value
 }
 
@@ -77,6 +90,14 @@ fun locationName(id: LocationId): String = when (id.value) {
     "mainz-quay" -> stringResource(R.string.location_mainz_quay)
     "hamburg-port" -> stringResource(R.string.location_hamburg_port)
     "leipzig-yard" -> stringResource(R.string.location_leipzig_yard)
+    "munich-centre" -> stringResource(R.string.location_munich_centre)
+    "nuremberg-terminal" -> stringResource(R.string.location_nuremberg_terminal)
+    "bremen-port" -> stringResource(R.string.location_bremen_port)
+    "kiel-dock" -> stringResource(R.string.location_kiel_dock)
+    "berlin-hub" -> stringResource(R.string.location_berlin_hub)
+    "magdeburg-depot" -> stringResource(R.string.location_magdeburg_depot)
+    "stuttgart-terminal" -> stringResource(R.string.location_stuttgart_terminal)
+    "freiburg-hub" -> stringResource(R.string.location_freiburg_hub)
     else -> id.value
 }
 

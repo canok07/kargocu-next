@@ -1,1 +1,1 @@
-Meet the Parcelrise Tycoon name and emblem. Actions now finish after progress is saved, with more reliable double-tap handling and simultaneous settings changes. Cost confirmations, new-game navigation and the large-text welcome screen have been improved.
+Build a broader company across eight stages, seven regions and 14 hubs. Expand with new specialist vehicles and cargo, choose alternative routes, and diversify your fleet for advanced milestones. Job rewards now reflect parcel count and load weight. Existing saves and accepted delivery quotes are preserved.

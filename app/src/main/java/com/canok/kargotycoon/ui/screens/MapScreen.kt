@@ -78,7 +78,7 @@ fun MapScreen(game: GameState, catalog: GameCatalog) {
 
         BoxWithConstraints(
             Modifier.fillMaxWidth()
-                .height(320.dp)
+                .height(440.dp)
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.small)
                 .background(MaterialTheme.colorScheme.surface),
         ) {
@@ -115,9 +115,9 @@ fun MapScreen(game: GameState, catalog: GameCatalog) {
                 val fullLocationName = locationName(location.id)
                 Box(
                     Modifier
-                        .offset(x = boardWidth * position.x - 50.dp, y = boardHeight * position.y - 7.dp)
-                        .width(100.dp)
-                        .height(72.dp)
+                        .offset(x = boardWidth * position.x - 36.dp, y = boardHeight * position.y - 7.dp)
+                        .width(72.dp)
+                        .height(56.dp)
                         .testTag(TestTags.mapNode(location.id.value))
                         .semantics { contentDescription = fullLocationName }
                         .clickable { selectedRegion = location.regionId },
@@ -198,6 +198,12 @@ fun MapScreen(game: GameState, catalog: GameCatalog) {
                         formatInteger(region.minimumOwnedVehicles.toLong(), locale),
                     ),
                 )
+                if (region.minimumDistinctVehicleSpecs > 0) {
+                    KeyValueRow(
+                        stringResource(R.string.company_vehicle_types),
+                        stringResource(R.string.target_progress, formatInteger(game.distinctOwnedVehicleSpecs().toLong(), locale), formatInteger(region.minimumDistinctVehicleSpecs.toLong(), locale)),
+                    )
+                }
                 KeyValueRow(
                     stringResource(R.string.map_condition_day),
                     stringResource(

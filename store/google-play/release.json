@@ -1,0 +1,10 @@
+{
+  "app": "Parcelrise Tycoon",
+  "versionName": "0.2.0",
+  "versionCode": 3,
+  "applicationId": "com.canok.kargotycoon",
+  "captureDate": "2026-10-03",
+  "captureDevice": "Pixel_10a / Android 17 API 37 / visible emulator",
+  "sourceApk": "ParcelriseTycoon-0.2.0-20261003.apk",
+  "sourceApkSha256": "42bf9dac1b06f17faca73c99f74e39122733e20ef76fa67bf284b6df8864aa10"
+}

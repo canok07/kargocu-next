@@ -1,0 +1,214 @@
+{
+  "seed": 20261003,
+  "speedMultiplier": 100,
+  "criterion": "highest company stage and every catalog region unlocked",
+  "strategy": "automatic legal job selection by profit per duration; buy distinct owned types toward catalog gates with 200 EUR buffer, hire and assign drivers, repair and maintain idle fleet; no injected funds, catalog changes or AdvanceDay",
+  "realElapsedMillis": 447339,
+  "gameElapsedMillis": 2678772000,
+  "normalClockEquivalentMillis": 44646200,
+  "gameDay": 32,
+  "stage": 8,
+  "completedJobs": 405,
+  "ownedVehicles": 6,
+  "distinctOwnedVehicleTypes": 6,
+  "drivers": 6,
+  "regions": 7,
+  "balanceCents": 1475600,
+  "maxParallelJobs": 7,
+  "appliedCommands": 2562,
+  "uniquePaidJobs": 405,
+  "milestones": [
+    {
+      "realMillis": 72,
+      "gameDay": 1,
+      "stage": 1,
+      "completedJobs": 0
+    },
+    {
+      "realMillis": 14493,
+      "gameDay": 2,
+      "stage": 2,
+      "completedJobs": 6
+    },
+    {
+      "realMillis": 29006,
+      "gameDay": 3,
+      "stage": 2,
+      "completedJobs": 12
+    },
+    {
+      "realMillis": 43321,
+      "gameDay": 4,
+      "stage": 3,
+      "completedJobs": 19
+    },
+    {
+      "realMillis": 57806,
+      "gameDay": 5,
+      "stage": 3,
+      "completedJobs": 26
+    },
+    {
+      "realMillis": 72265,
+      "gameDay": 6,
+      "stage": 3,
+      "completedJobs": 36
+    },
+    {
+      "realMillis": 86671,
+      "gameDay": 7,
+      "stage": 3,
+      "completedJobs": 44
+    },
+    {
+      "realMillis": 101053,
+      "gameDay": 8,
+      "stage": 4,
+      "completedJobs": 52
+    },
+    {
+      "realMillis": 115516,
+      "gameDay": 9,
+      "stage": 4,
+      "completedJobs": 55
+    },
+    {
+      "realMillis": 129964,
+      "gameDay": 10,
+      "stage": 4,
+      "completedJobs": 61
+    },
+    {
+      "realMillis": 144409,
+      "gameDay": 11,
+      "stage": 4,
+      "completedJobs": 67
+    },
+    {
+      "realMillis": 158820,
+      "gameDay": 12,
+      "stage": 5,
+      "completedJobs": 75
+    },
+    {
+      "realMillis": 173294,
+      "gameDay": 13,
+      "stage": 5,
+      "completedJobs": 86
+    },
+    {
+      "realMillis": 187762,
+      "gameDay": 14,
+      "stage": 5,
+      "completedJobs": 98
+    },
+    {
+      "realMillis": 202061,
+      "gameDay": 15,
+      "stage": 5,
+      "completedJobs": 112
+    },
+    {
+      "realMillis": 216511,
+      "gameDay": 16,
+      "stage": 5,
+      "completedJobs": 121
+    },
+    {
+      "realMillis": 231096,
+      "gameDay": 17,
+      "stage": 5,
+      "completedJobs": 134
+    },
+    {
+      "realMillis": 245301,
+      "gameDay": 18,
+      "stage": 6,
+      "completedJobs": 146
+    },
+    {
+      "realMillis": 259807,
+      "gameDay": 19,
+      "stage": 6,
+      "completedJobs": 163
+    },
+    {
+      "realMillis": 274234,
+      "gameDay": 20,
+      "stage": 6,
+      "completedJobs": 179
+    },
+    {
+      "realMillis": 288673,
+      "gameDay": 21,
+      "stage": 6,
+      "completedJobs": 197
+    },
+    {
+      "realMillis": 303091,
+      "gameDay": 22,
+      "stage": 6,
+      "completedJobs": 209
+    },
+    {
+      "realMillis": 317611,
+      "gameDay": 23,
+      "stage": 6,
+      "completedJobs": 227
+    },
+    {
+      "realMillis": 331983,
+      "gameDay": 24,
+      "stage": 7,
+      "completedJobs": 245
+    },
+    {
+      "realMillis": 346309,
+      "gameDay": 25,
+      "stage": 7,
+      "completedJobs": 266
+    },
+    {
+      "realMillis": 360972,
+      "gameDay": 26,
+      "stage": 7,
+      "completedJobs": 286
+    },
+    {
+      "realMillis": 375189,
+      "gameDay": 27,
+      "stage": 7,
+      "completedJobs": 305
+    },
+    {
+      "realMillis": 389614,
+      "gameDay": 28,
+      "stage": 7,
+      "completedJobs": 325
+    },
+    {
+      "realMillis": 404061,
+      "gameDay": 29,
+      "stage": 7,
+      "completedJobs": 347
+    },
+    {
+      "realMillis": 418415,
+      "gameDay": 30,
+      "stage": 7,
+      "completedJobs": 366
+    },
+    {
+      "realMillis": 432815,
+      "gameDay": 31,
+      "stage": 7,
+      "completedJobs": 386
+    },
+    {
+      "realMillis": 447191,
+      "gameDay": 32,
+      "stage": 8,
+      "completedJobs": 405
+    }
+  ]
+}

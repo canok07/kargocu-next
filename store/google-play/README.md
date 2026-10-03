@@ -1,6 +1,6 @@
 # Parcelrise Tycoon — mağaza hazırlığı
 
-Bu klasör Google Play için metin ve görsel hazırlık paketidir. Mağazaya yükleme veya yayın yapılmadı. İçerik 0.1.1 / versionCode 2 sürümünü anlatır. Android application ID `com.canok.kargotycoon` ve kayıt biçimi korunmuştur; görünen ad her dilde **Parcelrise Tycoon** olur.
+Bu klasör Google Play için metin ve görsel hazırlık paketidir. Mağazaya yükleme veya yayın yapılmadı. İçerik 0.2.0 / versionCode 3 sürümünü anlatır. Android application ID `com.canok.kargotycoon` ve kayıt biçimi korunmuştur; görünen ad her dilde **Parcelrise Tycoon** olur.
 
 ## İçerik
 

@@ -3,6 +3,8 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const sharp = require('sharp');
 const root = path.resolve(__dirname, '../store/google-play');
+const release = JSON.parse(fs.readFileSync(path.join(root, 'release.json'), 'utf8'));
+if (!/^[0-9a-f]{64}$/.test(release.sourceApkSha256)) throw new Error('Invalid source APK SHA-256');
 const shots = [
   ['01-welcome', 'Başlangıç ekranı ve dil seçimi.', 'Welcome screen and language selection.'],
   ['02-dashboard', 'Şirket panelinde bakiye, oyun günü ve teslimat durumu.', 'Company dashboard with balance, game day and delivery status.'],
@@ -46,6 +48,6 @@ const hash = b => crypto.createHash('sha256').update(b).digest('hex');
     if (isIcon && fs.statSync(full).size > 1024*1024) throw new Error('Icon too large');
     assets.push({file,kind:isIcon?'application-icon':'vector-promotion',width:meta.width,height:meta.height,alt:{'tr-TR':isIcon?'Yeşil zemin üzerinde bakır renkli paket ve yükseliş simgesi.':'Parcelrise Tycoon adı, paket amblemi ve şirketin büyümesini anlatan rota çizimi.','en-US':isIcon?'Copper parcel and rising chevron on a forest green background.':'Parcelrise Tycoon title, parcel emblem and a route illustrating company growth.'},sha256:hash(fs.readFileSync(full))});
   }
-  fs.writeFileSync(path.join(root,'assets.json'),JSON.stringify({app:'Parcelrise Tycoon',versionName:'0.1.1',versionCode:2,applicationId:'com.canok.kargotycoon',captureDate:'2026-10-03',captureDevice:'Pixel_10a / Android 17 API 37 / visible emulator',sourceApk:'ParcelriseTycoon-0.1.1-20261003.apk',sourceApkSha256:'d7bfa3ff83cab36be59ec5ee7c4ee73fd4fd5834240bc37abca31bed6ee621a0',assets},null,2)+'\n');
+  fs.writeFileSync(path.join(root,'assets.json'),JSON.stringify({...release,assets},null,2)+'\n');
   console.log(`Validated ${assets.length} PNG assets; wrote assets.json.`);
 })().catch(e=>{console.error(e);process.exitCode=1;});

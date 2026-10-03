@@ -1,14 +1,18 @@
-# Parcelrise Tycoon — 0.1.1
+# Parcelrise Tycoon — 0.2.0
 
 Sıfırdan geliştirilen Android lojistik oyunu. Eski Kargocu/Courier Rush projeleri yalnız referanstır; bu oyunun kodu, ekranları ve çizimleri yeni oluşturulmuştur.
 
 Oyuncu 100 EUR ve kendi sürdüğü kiralık panelvanla başlar. İş kabulü, maliyet önizlemesi, teslimat ve ödeme, araç alım/satımı/bakımı, şoför işe alma/atama, paralel işler, şirket ve bölge ilerlemesi, Almanya temalı şematik harita, öğretici, TR/EN ve yerel kayıt/kurtarma akışı uygulanmıştır. Türkçedeki Panel, İngilizcedeki Dashboard ekranıdır.
 
+0.2.0: sekiz şirket kademesi, yedi bölge, 14 merkez, 22 rota, kiralık başlangıç dahil dokuz araç türü ve sekiz yük kategorisi. İleri aşamalar farklı araç yatırımı gerektirir; iş pazarı ilerlemeyle büyür. İlk araç erişimi korunurken uzun kariyer [M16 denge ölçümleri](docs/M16-Uzun-Kariyer.md) ile karşılaştırıldı. Save biçimi ve kabul edilmiş iş faturaları korunur.
+
 Zaman: 1 gerçek saniye = 1 oyun dakikası. Yeniden açılışta geçen süre en fazla bir oyun günü uygulanır; çevrimdışında yeni iş otomatik kabul edilmez.
 
 ## Açma ve çalıştırma
 
-M14 marka ve APK doğrulaması: 81 normal + 20 ağır motor testi, 36 Android testi ve ayrı bir görünür 100× endgame ölçümü geçti. Ayrıntılar [M14 sonucu](docs/M14-Sonuc.md), mağaza dosyaları [Google Play hazırlığı](store/google-play/README.md) içinde. 0.1.1, yeni ekonomi/kariyer genişletmesinin doğrulanmış ara checkpoint'idir.
+M16: 90 normal motor testi, 20 ağır stres testi, iki çoklu kariyer karşılaştırma testi ve görünür emülatörde 37 Android işlev/kayıt testi geçti. Debug ve küçültülmüş release derlemesi, lint (0 hata / mevcut 1 OldTargetApi uyarısı) doğrulandı. Önceki [M14 sonucu](docs/M14-Sonuc.md) 0.1.1 ara checkpoint'ini anlatır; güncel mağaza dosyaları [Google Play hazırlığı](store/google-play/README.md) içindedir.
+
+Ayrı görünür 100× ölçümü de geçti: 7 dk 27,339 sn içinde kademe 8 ve yedi açık bölge; 405 benzersiz ödeme, altı farklı araç ve altı şoför. Normal saat karşılığı 12 sa 24 dk 6,2 sn; bu garanti insan oynama süresi değildir. Gün-atlama karşılaştırması ve APK bilgileri [son doğrulama raporunda](docs/M16-Sonuc.md). Toplam 150 test kontrolü geçti; ağır ve opt-in kariyer/100× paketleri rutin testlerden ayrıdır.
 
 Android Studio'da bu proje klasörünü aç, Gradle JDK olarak desteklenen Studio JBR'yi seç, senkronizasyonu tamamla ve app yapılandırmasını çalıştır. Windows doğrulaması Studio JBR 25 ile yapıldı; varsayılan Java 8 kullanılmamalıdır.
 

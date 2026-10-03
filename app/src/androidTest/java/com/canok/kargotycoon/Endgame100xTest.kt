@@ -3,6 +3,7 @@ package com.canok.kargotycoon
 import android.os.SystemClock
 import android.util.Log
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -61,7 +62,8 @@ class Endgame100xTest {
         apply(GameCommand.SetTutorialDismissed(SessionController.id(), true))
         compose.onNodeWithTag(TestTags.NAV_MORE).performClick()
         compose.onNodeWithTag(TestTags.MORE_COMPANY).performClick()
-        val reportDir = File(context.filesDir, "benchmarks/endgame100x").apply { mkdirs() }
+        compose.onNodeWithTag(TestTags.COMPANY_ROOT).assertIsDisplayed()
+        val reportDir = File(context.filesDir, "benchmarks/endgame100x-v020").apply { mkdirs() }
         val progress = File(reportDir, "progress.csv")
         progress.writeText("real_ms,game_day,game_ms,stage,completed_jobs,owned_vehicles,drivers,regions,balance_cents\n")
         val baseGameMillis = game().gameTime.millis
@@ -69,6 +71,8 @@ class Endgame100xTest {
         var lastDay = 0
         val milestones = mutableListOf<JSONObject>()
         val maxStage = catalog.progression.levels.maxOf { it.level }
+        val targetOwned = catalog.progression.levels.maxOf { it.minimumOwnedVehicles }
+        val targetTypes = catalog.progression.levels.maxOf { it.minimumDistinctVehicleSpecs }
         val requiredRegions = catalog.regions.map { it.id }.toSet()
         fun goalReached() = game().companyLevel(catalog) == maxStage && game().progression.unlockedRegionIds.containsAll(requiredRegions)
         try {
@@ -81,10 +85,10 @@ class Endgame100xTest {
                 if (delta > 0) apply(GameCommand.AdvanceTime(SessionController.id(), delta))
                 var snapshot = game()
                 val owned = snapshot.vehicles.count { it.ownership == Ownership.OWNED }
-                if (owned < 2) {
+                if (owned < targetOwned || snapshot.distinctOwnedVehicleSpecs() < targetTypes) {
                     val affordable = catalog.vehicles.filter { !it.rental && it.minimumCompanyLevel <= snapshot.companyLevel(catalog) && snapshot.money >= it.purchasePrice + Money.euros(200) }
-                    val choice = affordable.firstOrNull { spec -> snapshot.vehicles.none { it.specId == spec.id } }
-                        ?: affordable.minByOrNull { it.purchasePrice.cents }
+                    val choice = affordable.filter { spec -> snapshot.vehicles.none { it.ownership == Ownership.OWNED && it.specId == spec.id } }
+                        .minByOrNull { it.purchasePrice.cents }
                     if (choice != null) apply(GameCommand.PurchaseVehicle(SessionController.id(), choice.id))
                 }
                 snapshot = game()
@@ -110,7 +114,11 @@ class Endgame100xTest {
                         GameCommand.AcceptJob(SessionController.id(), offer.id, vehicle.id, route, manualDriving = manual)
                     } }.mapNotNull { command ->
                         val result = engine.reduce(snapshot, command)
-                        if (result !is GameResult.Applied) null else command to result.state.activeJobs.last().invoice.maximumRevenue.cents
+                        if (result !is GameResult.Applied) null else {
+                            val job = result.state.activeJobs.last()
+                            val margin = (job.invoice.maximumRevenue - job.reserved).cents
+                            if (margin <= 0) null else command to (margin.toDouble() / (job.completionAt.millis - job.startedAt.millis))
+                        }
                     }.sortedByDescending { it.second }
                     candidates.firstOrNull()?.let { apply(it.first) }
                 }
@@ -125,6 +133,10 @@ class Endgame100xTest {
                     Log.i("Endgame100x", "day=${snapshot.gameDay} stage=${snapshot.companyLevel(catalog)} jobs=${snapshot.progression.completedJobs} balance=${snapshot.money.cents} regions=${snapshot.progression.unlockedRegionIds.size} realMillis=$realMillis")
                 }
                 session.clearNotice()
+                // This test owns Compose's frame clock. Keep recomposition visible
+                // while wall-clock game time advances outside Compose actions.
+                compose.mainClock.advanceTimeByFrame()
+                compose.waitForIdle()
                 delay(100)
             }
             val finalState = game()
@@ -135,12 +147,13 @@ class Endgame100xTest {
             val report = JSONObject()
                 .put("seed", seed).put("speedMultiplier", 100)
                 .put("criterion", "highest company stage and every catalog region unlocked")
-                .put("strategy", "automatic legal job selection by payout; buy up to two owned vehicles with 200 EUR buffer, hire and assign drivers, repair and maintain idle fleet; no injected funds, catalog changes or AdvanceDay")
+                .put("strategy", "automatic legal job selection by profit per duration; buy distinct owned types toward catalog gates with 200 EUR buffer, hire and assign drivers, repair and maintain idle fleet; no injected funds, catalog changes or AdvanceDay")
                 .put("realElapsedMillis", measuredMillis).put("gameElapsedMillis", gameElapsedMillis)
                 .put("normalClockEquivalentMillis", gameElapsedMillis / 60L)
                 .put("gameDay", finalState.gameDay).put("stage", finalState.companyLevel(catalog))
                 .put("completedJobs", finalState.progression.completedJobs)
                 .put("ownedVehicles", finalState.vehicles.count { it.ownership == Ownership.OWNED })
+                .put("distinctOwnedVehicleTypes", finalState.distinctOwnedVehicleSpecs())
                 .put("drivers", finalState.drivers.size).put("regions", finalState.progression.unlockedRegionIds.size)
                 .put("balanceCents", finalState.money.cents).put("maxParallelJobs", maxParallel)
                 .put("appliedCommands", commandCount).put("uniquePaidJobs", paidJobs.size)

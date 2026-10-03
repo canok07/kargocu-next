@@ -49,7 +49,7 @@ class EconomyBalanceRegressionTest {
         val base = newGame(seed = 8)
         val rich = base.copy(money = Money.euros(1_000_000), gameDay = top.minimumGameDay,
             progression = base.progression.copy(completedJobs = top.minimumCompletedJobs),
-            vehicles = base.vehicles + (0 until top.minimumOwnedVehicles).map { VehicleState(VehicleId("owned-$it"), VehicleSpecId("city-van"), Ownership.OWNED) },
+            vehicles = base.vehicles + (0 until top.minimumOwnedVehicles).map { VehicleState(VehicleId("owned-$it"), catalog.vehicles.filterNot { spec -> spec.rental }[it].id, Ownership.OWNED) },
             drivers = (0 until top.minimumDrivers).map { DriverState(DriverId("driver-$it"), DriverTierId("junior"), "Driver $it") })
         for (spec in catalog.vehicles.filterNot { it.rental }) {
             val bought = (engine.reduce(rich, GameCommand.PurchaseVehicle(CommandId("buy-${spec.id.value}"), spec.id)) as GameResult.Applied).state

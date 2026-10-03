@@ -41,6 +41,7 @@ fun CompanyScreen(game: GameState, catalog: GameCatalog) {
         KeyValueRow(stringResource(R.string.company_completed), formatInteger(game.progression.completedJobs.toLong(), locale))
         KeyValueRow(stringResource(R.string.company_on_time), formatInteger(game.progression.onTimeJobs.toLong(), locale))
         KeyValueRow(stringResource(R.string.company_owned), formatInteger(owned.toLong(), locale))
+        KeyValueRow(stringResource(R.string.company_vehicle_types), formatInteger(game.distinctOwnedVehicleSpecs().toLong(), locale))
         KeyValueRow(stringResource(R.string.company_employees), formatInteger(game.drivers.size.toLong(), locale))
         KeyValueRow(
             stringResource(R.string.company_regions),
@@ -68,6 +69,12 @@ fun CompanyScreen(game: GameState, catalog: GameCatalog) {
                     formatInteger(nextLevel.minimumOwnedVehicles.toLong(), locale),
                 ),
             )
+            if (nextLevel.minimumDistinctVehicleSpecs > 0) {
+                KeyValueRow(
+                    stringResource(R.string.company_vehicle_types),
+                    stringResource(R.string.target_progress, formatInteger(game.distinctOwnedVehicleSpecs().toLong(), locale), formatInteger(nextLevel.minimumDistinctVehicleSpecs.toLong(), locale)),
+                )
+            }
             KeyValueRow(
                 stringResource(R.string.company_requirement_drivers),
                 stringResource(
@@ -110,6 +117,12 @@ fun CompanyScreen(game: GameState, catalog: GameCatalog) {
                         formatInteger(region.minimumOwnedVehicles.toLong(), locale),
                     ),
                 )
+                if (region.minimumDistinctVehicleSpecs > 0) {
+                    KeyValueRow(
+                        stringResource(R.string.company_vehicle_types),
+                        stringResource(R.string.target_progress, formatInteger(game.distinctOwnedVehicleSpecs().toLong(), locale), formatInteger(region.minimumDistinctVehicleSpecs.toLong(), locale)),
+                    )
+                }
                 KeyValueRow(
                     stringResource(R.string.map_condition_day),
                     stringResource(
